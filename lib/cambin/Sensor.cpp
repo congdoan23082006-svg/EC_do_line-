@@ -67,10 +67,10 @@ void read_sensor_74hc4067() {
     sensorValue[j] = 4095 - analogRead(SIG_PIN);
 
     temp = temp << 1; 
-    // Logic cảm biến infrared: 
-    // - Khi phát hiện ĐEN (quang phổ thấp): sensorValue < compare_value → bit = 1
-    // - Khi phát hiện TRẮNG (quang phổ cao): sensorValue >= compare_value → bit = 0
-    if (sensorValue[j] < compare_value[j]) {
+    // Logic cảm biến infrared (sensorValue = 4095 - raw, nên ĐEN có giá trị CAO hơn):
+    // - Khi phát hiện ĐEN  : sensorValue >= compare_value → bit = 1
+    // - Khi phát hiện TRẮNG: sensorValue <  compare_value → bit = 0
+    if (sensorValue[j] >= compare_value[j]) {
       temp |= 0x01;  // ĐEN = 1
     } else {
       temp &= 0xfe;  // TRẮNG = 0
