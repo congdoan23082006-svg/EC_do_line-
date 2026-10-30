@@ -1,0 +1,7 @@
+.pio
+.cache
+.ccls
+.clangd
+.clangd.save
+compile_commands.json
+.vscode/

@@ -1,0 +1,56 @@
+* Hướng dẫn Git cho dự án PlatformIO
+
+** 1. Các bước khởi tạo và đẩy code lên GitHub (Dành cho Quản trị viên/Trưởng nhóm)
+
+1. Khởi tạo Git cho thư mục dự án PlatformIO dưới máy:
+   #+BEGIN_SRC bash
+   git init
+   #+END_SRC
+   - *Công dụng:* Tạo một kho chứa Git bí mật ngay trong thư mục để bắt đầu theo dõi mọi sự thay đổi của code.
+
+2. Thêm tất cả các file khung xương vừa tạo vào Git chuẩn bị đẩy đi:
+   #+BEGIN_SRC bash
+   git add .
+   #+END_SRC
+   - *Công dụng:* Gom tất cả các file hiện có vào "giỏ hàng" để chuẩn bị lưu lại (dấu =.= nghĩa là chọn tất cả).
+
+3. Tạo một ghi chú cho lần đầu tiên đẩy code:
+   #+BEGIN_SRC bash
+   git commit -m "Khởi tạo khung xương dự án PlatformIO"
+   #+END_SRC
+   - *Công dụng:* Chốt đơn và dán nhãn. Chụp lại trạng thái code và gắn kèm lời nhắn để sau này dễ quản lý.
+4. Đổi tên nhánh mặc định thành main cho giống trên GitHub:
+   #+BEGIN_SRC bash
+   git branch -M main
+   #+END_SRC
+   - *Công dụng:* Đổi tên nhánh chính từ tên cũ (=master=) thành =main= cho đồng bộ với chuẩn của GitHub.
+
+5. Liên kết thư mục máy tính với kho chứa trên GitHub:
+   #+BEGIN_SRC bash
+   git remote add origin https://github.com
+   #+END_SRC
+   - *Công dụng:* Bắc cầu nối. Giúp Git dưới máy biết địa chỉ kho chứa trên mạng để gửi code lên đúng chỗ.
+6. Đẩy toàn bộ bộ khung lên GitHub:
+   #+BEGIN_SRC bash
+   git push -u origin main
+   #+END_SRC
+   - *Công dụng:* Tải code lên mạng. Chữ =-u= giúp ghi nhớ cấu hình, lần sau bạn chỉ cần gõ =git push= là xong.
+** 2. Hướng dẫn dành cho Thành viên (Thực hiện công việc)
+
+- Tải dự án về máy tính (Clone):
+  #+BEGIN_SRC bash
+  git clone https://github.com
+  #+END_SRC
+  - *Công dụng:* Bản sao dự án. Tải nguyên vẹn toàn bộ dự án từ GitHub về máy tính để bắt đầu làm việc.
+
+- Tạo và chuyển sang nhánh tính năng mới để làm việc:
+  #+BEGIN_SRC bash
+  git checkout -b feature/logic-nam
+  #+END_SRC
+  - *Công dụng:* Tách nhánh riêng. Tạo một vùng an toàn mới để sửa code mà không làm ảnh hưởng đến code chính của đội.
+
+- Đẩy nhánh tính năng mới làm xong lên GitHub:
+  #+BEGIN_SRC bash
+  git push origin feature/logic-nam
+  #+END_SRC
+  - *Công dụng:* Đưa phần việc lên mạng. Tải nhánh tính năng của bạn lên GitHub để trưởng nhóm kiểm tra và duyệt code.

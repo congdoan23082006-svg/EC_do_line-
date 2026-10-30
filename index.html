@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>ROBOT BLE - Điều Khiển & Giám Sát Dò Line</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --accent: #38bdf8;
+      --accent-hover: #0ea5e9;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --text: #f8fafc;
+      --text-dim: #94a3b8;
+      --border: #334155;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      padding: 12px;
+      max-width: 650px;
+      margin: 0 auto;
+      padding-bottom: 30px;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0 16px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 14px;
+    }
+    h1 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--accent);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge {
+      font-size: 0.75rem;
+      padding: 4px 8px;
+      border-radius: 9999px;
+      font-weight: 600;
+      background: #374151;
+      color: #9ca3af;
+    }
+    .badge.connected {
+      background: rgba(34, 197, 94, 0.2);
+      color: var(--success);
+      border: 1px solid var(--success);
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 14px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+    }
+    .card-title {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+    .btn {
+      background: var(--border);
+      color: var(--text);
+      border: none;
+      padding: 10px 16px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+      touch-action: manipulation;
+    }
+    .btn:active {
+      transform: scale(0.96);
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #0f172a;
+    }
+    .btn-success {
+      background: var(--success);
+      color: #0f172a;
+    }
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+    }
+    .btn-warning {
+      background: var(--warning);
+      color: #0f172a;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      text-align: center;
+    }
+    .stat-box {
+      background: rgba(15, 23, 42, 0.6);
+      padding: 8px 4px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+    .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+    }
+    .stat-val {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--accent);
+      margin-top: 2px;
+    }
+    /* Sensor bar */
+    .sensor-container {
+      display: flex;
+      justify-content: space-between;
+      gap: 6px;
+      margin: 12px 0 8px;
+      padding: 8px 12px;
+      background: rgba(15, 23, 42, 0.6);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .sensor-dot {
+      flex: 1;
+      height: 38px;
+      border-radius: 6px;
+      background: #334155;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      font-weight: 700;
+      transition: background 0.1s, transform 0.1s;
+    }
+    .sensor-dot.active {
+      background: #ef4444;
+      color: #ffffff;
+      box-shadow: 0 0 10px #ef4444;
+      transform: scale(1.04);
+    }
+    /* Line position indicator */
+    .line-pos-track {
+      position: relative;
+      height: 12px;
+      background: #334155;
+      border-radius: 6px;
+      margin: 14px 4px 6px;
+    }
+    .line-pos-track::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: -3px;
+      bottom: -3px;
+      width: 2px;
+      background: var(--text-dim);
+    }
+    .line-pos-pointer {
+      position: absolute;
+      top: -5px;
+      width: 14px;
+      height: 22px;
+      background: var(--accent);
+      border-radius: 4px;
+      transform: translateX(-50%);
+      transition: left 0.08s linear;
+      box-shadow: 0 0 8px var(--accent);
+    }
+    /* D-Pad Manual controls */
+    .dpad-container {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 56px);
+      gap: 8px;
+      max-width: 250px;
+      margin: 8px auto;
+    }
+    .dpad-btn {
+      font-size: 1.25rem;
+      font-weight: bold;
+      border-radius: 12px;
+      background: #334155;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+    .dpad-btn:active {
+      background: var(--accent);
+      color: #0f172a;
+    }
+    /* Form inputs */
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+    .form-group label {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+    .form-group input {
+      background: #0f172a;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      color: #fff;
+      font-size: 0.9rem;
+    }
+    .form-group input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    /* Console log */
+    .console-box {
+      background: #0b1120;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 8px 10px;
+      height: 90px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 0.75rem;
+      color: #38bdf8;
+    }
+    .log-entry {
+      margin-bottom: 2px;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🚗 ROBOT BLE DASHBOARD</h1>
+    <span id="connBadge" class="badge">CHƯA KẾT NỐI</span>
+  </header>
+
+  <!-- Connect Card -->
+  <div class="card">
+    <div style="display: flex; gap: 10px;">
+      <button id="btnConnect" class="btn btn-primary" style="flex: 1;">⚡ Kết Nối Bluetooth</button>
+      <button id="btnDisconnect" class="btn btn-danger" style="display: none;">Ngắt Kết Nối</button>
+    </div>
+  </div>
+
+  <!-- Telemetry & Sensors -->
+  <div class="card">
+    <div class="card-title">📡 CẢM BIẾN DÒ LINE & TRẠNG THÁI</div>
+    
+    <div class="stat-row">
+      <div class="stat-box">
+        <div class="stat-label">CHẾ ĐỘ</div>
+        <div id="valMode" class="stat-val">IDLE</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">TÌNH HUỐNG</div>
+        <div id="valCase" class="stat-val">-</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">VỊ TRÍ LINE</div>
+        <div id="valPos" class="stat-val">3500</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">SAI SỐ (ERR)</div>
+        <div id="valErr" class="stat-val">0</div>
+      </div>
+    </div>
+
+    <!-- 8 Sensor Dots -->
+    <div class="sensor-container">
+      <div id="dot0" class="sensor-dot"><span>S1</span></div>
+      <div id="dot1" class="sensor-dot"><span>S2</span></div>
+      <div id="dot2" class="sensor-dot"><span>S3</span></div>
+      <div id="dot3" class="sensor-dot"><span>S4</span></div>
+      <div id="dot4" class="sensor-dot"><span>S5</span></div>
+      <div id="dot5" class="sensor-dot"><span>S6</span></div>
+      <div id="dot6" class="sensor-dot"><span>S7</span></div>
+      <div id="dot7" class="sensor-dot"><span>S8</span></div>
+    </div>
+
+    <!-- Position Slider Track -->
+    <div class="line-pos-track">
+      <div id="posPointer" class="line-pos-pointer" style="left: 50%;"></div>
+    </div>
+    <div style="display: flex; justify-content: space-between; font-size: 0.65rem; color: var(--text-dim); margin-top: 2px;">
+      <span>Trái (0)</span>
+      <span>Tâm (3500)</span>
+      <span>Phải (7000)</span>
+    </div>
+  </div>
+
+  <!-- Lap Timer Card -->
+  <div class="card" style="border: 1px solid #38bdf8; background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+      <div class="card-title" style="margin-bottom: 0; color: #38bdf8; font-weight: 700;">⏱️ ĐỒNG HỒ BẤM GIỜ VÒNG ĐUA (LAP TIMER)</div>
+      <button id="btnResetTimer" class="btn" style="padding: 3px 8px; font-size: 0.7rem; background: #334155;">Reset</button>
+    </div>
+    
+    <div style="text-align: center; padding: 10px 0;">
+      <div id="timerDisplay" style="font-family: monospace; font-size: 2.6rem; font-weight: 800; color: #22c55e; text-shadow: 0 0 15px rgba(34, 197, 94, 0.4); letter-spacing: 2px;">00:00.000</div>
+      <div id="timerStatus" style="font-size: 0.8rem; color: var(--text-dim); margin-top: 4px; font-weight: 600;">SẴN SÀNG</div>
+    </div>
+
+    <div class="stat-row" style="grid-template-columns: 1fr 1fr; margin-top: 4px;">
+      <div class="stat-box">
+        <div class="stat-label">VÒNG VỪA CHẠY (LAST LAP)</div>
+        <div id="lastLapDisplay" class="stat-val" style="font-size: 1.05rem; color: #f8fafc;">--:--.---</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">⭐ KỶ LỤC TỐT NHẤT (BEST LAP)</div>
+        <div id="bestLapDisplay" class="stat-val" style="font-size: 1.05rem; color: #f59e0b;">--:--.---</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Mode Control Buttons -->
+  <div class="card">
+    <div class="card-title">🕹️ CHỌN CHẾ ĐỘ HOẠT ĐỘNG</div>
+    <div class="grid-3">
+      <button id="btnCal" class="btn btn-warning">🎯 CALIB (5s)</button>
+      <button id="btnAuto" class="btn btn-success">▶ CHẠY AUTO</button>
+      <button id="btnManual" class="btn btn-danger">⏹ DỪNG / TAY</button>
+    </div>
+  </div>
+
+  <!-- Manual D-Pad -->
+  <div class="card">
+    <div class="card-title">🎮 ĐIỀU KHIỂN THỦ CÔNG (MANUAL)</div>
+    <div class="dpad-container">
+      <div></div>
+      <button class="btn dpad-btn" id="btnFwd">▲</button>
+      <div></div>
+      <button class="btn dpad-btn" id="btnLeft">◀</button>
+      <button class="btn dpad-btn btn-danger" id="btnStop" style="font-size: 0.85rem;">STOP</button>
+      <button class="btn dpad-btn" id="btnRight">▶</button>
+      <div></div>
+      <button class="btn dpad-btn" id="btnBwd">▼</button>
+      <div></div>
+    </div>
+    <div style="margin-top: 10px; display: flex; align-items: center; gap: 10px;">
+      <label style="font-size: 0.8rem; color: var(--text-dim); white-space: nowrap;">Tốc độ tay:</label>
+      <input type="range" id="sliderSpeed" min="30" max="255" value="120" style="flex: 1;">
+      <span id="txtSpeed" style="font-size: 0.85rem; font-weight: bold; width: 35px;">120</span>
+    </div>
+  </div>
+
+  <!-- THÔNG SỐ XE (PID, PROF, TURN) -->
+  <div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 6px;">
+      <div class="card-title" style="margin-bottom: 0; font-size: 0.95rem; font-weight: 700; color: var(--accent);">⚙️ THÔNG SỐ XE</div>
+    </div>
+
+    <!-- 1. PID -->
+    <div style="margin-bottom: 14px;">
+      <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-dim); margin-bottom: 6px;">PID</div>
+      <div class="grid-3">
+        <div class="form-group">
+          <label>KP</label>
+          <input type="number" id="inputKp" step="any" value="0.04">
+        </div>
+        <div class="form-group">
+          <label>KD</label>
+          <input type="number" id="inputKd" step="any" value="0.4">
+        </div>
+        <div class="form-group">
+          <label>KI</label>
+          <input type="number" id="inputKi" step="any" value="0.00005">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top: 4px;">
+        <label>BASE (tốc độ tối đa)</label>
+        <input type="number" id="inputBase" step="5" value="150">
+      </div>
+      <button id="btnSetPid" class="btn btn-primary" style="width: 100%; margin-top: 6px;">Gửi PID</button>
+    </div>
+
+    <!-- 2. Tốc độ theo đường (PROF) -->
+    <div style="margin-bottom: 14px; padding-top: 10px; border-top: 1px dashed var(--border);">
+      <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-dim); margin-bottom: 6px;">Tốc độ theo đường (PROF)</div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label>SPEED_MIN (tối thiểu)</label>
+          <input type="number" id="inputSpeedMin" step="5" value="110">
+        </div>
+        <div class="form-group">
+          <label>E_SLOW (sai số giảm hết)</label>
+          <input type="number" id="inputESlow" step="50" value="1800">
+        </div>
+      </div>
+      <button id="btnSetProf" class="btn btn-primary" style="width: 100%; margin-top: 6px;">Gửi PROF</button>
+    </div>
+
+    <!-- 3. Cua góc vuông (TURN) -->
+    <div style="padding-top: 10px; border-top: 1px dashed var(--border);">
+      <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-dim); margin-bottom: 6px;">Cua góc vuông (TURN)</div>
+      <div class="grid-3">
+        <div class="form-group">
+          <label>TURN_OUT (bánh ngoài +)</label>
+          <input type="number" id="inputTurnOut" step="5" value="60">
+        </div>
+        <div class="form-group">
+          <label>TURN_IN (bánh trong -)</label>
+          <input type="number" id="inputTurnIn" step="5" value="60">
+        </div>
+        <div class="form-group">
+          <label>TURN_BASE</label>
+          <input type="number" id="inputTurnBase" step="5" value="120">
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px; margin-top: 8px;">
+        <button id="btnSetTurn" class="btn btn-primary" style="flex: 1;">Gửi TURN</button>
+        <button id="btnGetAll" class="btn" style="flex: 1; background: #334155;">Đọc tất cả từ xe</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Console Log -->
+  <div class="card">
+    <div class="card-title">📝 NHẬT KÝ PHẢN HỒI (ROBOT LOG)</div>
+    <div id="consoleLog" class="console-box"></div>
+  </div>
+
+  <script>
+    // Nordic UART Service UUIDs
+    const SERVICE_UUID = "6e400001-b5a3-f393-e0a9-e50e24dcca9e";
+    const RX_UUID = "6e400002-b5a3-f393-e0a9-e50e24dcca9e";
+    const TX_UUID = "6e400003-b5a3-f393-e0a9-e50e24dcca9e";
+
+    let bleDevice = null;
+    let rxChar = null;
+    let txChar = null;
+
+    // DOM Elements
+    const btnConnect = document.getElementById('btnConnect');
+    const btnDisconnect = document.getElementById('btnDisconnect');
+    const connBadge = document.getElementById('connBadge');
+    const consoleLog = document.getElementById('consoleLog');
+
+    const valMode = document.getElementById('valMode');
+    const valCase = document.getElementById('valCase');
+    const valPos = document.getElementById('valPos');
+    const valErr = document.getElementById('valErr');
+    const posPointer = document.getElementById('posPointer');
+
+    function log(msg) {
+      const entry = document.createElement('div');
+      entry.className = 'log-entry';
+      const time = new Date().toLocaleTimeString();
+      entry.textContent = `[${time}] ${msg}`;
+      consoleLog.appendChild(entry);
+      consoleLog.scrollTop = consoleLog.scrollHeight;
+    }
+
+    async function sendCommand(cmd) {
+      if (!rxChar) {
+        log("Lỗi: Chưa kết nối Bluetooth!");
+        return;
+      }
+      try {
+        const encoder = new TextEncoder();
+        await rxChar.writeValue(encoder.encode(cmd));
+        log("Gửi: " + cmd);
+      } catch (err) {
+        log("Lỗi gửi: " + err);
+      }
+    }
+
+    async function connectBLE() {
+      if (!navigator.bluetooth) {
+        alert("Trình duyệt này không hỗ trợ Web Bluetooth! Vui lòng dùng Chrome trên Android, Windows, macOS, hoặc trình duyệt Bluefy trên iOS.");
+        return;
+      }
+      try {
+        log("Đang tìm robot 'ROBOT_BLE'...");
+        bleDevice = await navigator.bluetooth.requestDevice({
+          filters: [{ name: "ROBOT_BLE" }],
+          optionalServices: [SERVICE_UUID]
+        });
+
+        bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
+
+        log("Đang kết nối GATT Server...");
+        const server = await bleDevice.gatt.connect();
+
+        log("Đang lấy dịch vụ UART...");
+        const service = await server.getPrimaryService(SERVICE_UUID);
+
+        rxChar = await service.getCharacteristic(RX_UUID);
+        txChar = await service.getCharacteristic(TX_UUID);
+
+        await txChar.startNotifications();
+        txChar.addEventListener('characteristicvaluechanged', handleNotification);
+
+        connBadge.textContent = "ĐÃ KẾT NỐI";
+        connBadge.className = "badge connected";
+        btnConnect.style.display = "none";
+        btnDisconnect.style.display = "inline-flex";
+        log("Kết nối thành công tới ROBOT_BLE!");
+      } catch (err) {
+        log("Lỗi kết nối: " + err);
+      }
+    }
+
+    function onDisconnected() {
+      connBadge.textContent = "MẤT KẾT NỐI";
+      connBadge.className = "badge";
+      btnConnect.style.display = "inline-flex";
+      btnDisconnect.style.display = "none";
+      rxChar = null;
+      txChar = null;
+      log("Đã ngắt kết nối với robot!");
+    }
+
+    function disconnectBLE() {
+      if (bleDevice && bleDevice.gatt.connected) {
+        bleDevice.gatt.disconnect();
+      }
+    }
+
+    function handleNotification(event) {
+      const decoder = new TextDecoder('utf-8');
+      const text = decoder.decode(event.target.value).trim();
+
+      if (text.startsWith("{") && text.endsWith("}")) {
+        try {
+          const data = JSON.parse(text);
+          valMode.textContent = data.mode || "IDLE";
+          valCase.textContent = data.case || "-";
+          valPos.textContent = data.pos !== undefined ? data.pos : 3500;
+          valErr.textContent = data.err !== undefined ? data.err : 0;
+
+          // Cập nhật vị trí con trỏ (0..7000 => 0..100%)
+          if (data.pos !== undefined) {
+            const pct = Math.max(0, Math.min(100, (data.pos / 7000) * 100));
+            posPointer.style.left = `${pct}%`;
+          }
+
+          // Cập nhật 8 mắt cảm biến từ chuỗi bit 'pat' (vd: "00011000")
+          if (data.pat && data.pat.length === 8) {
+            for (let i = 0; i < 8; i++) {
+              const dot = document.getElementById(`dot${i}`);
+              if (dot) {
+                if (data.pat[i] === '1') {
+                  dot.classList.add('active');
+                } else {
+                  dot.classList.remove('active');
+                }
+              }
+            }
+          }
+        } catch (e) {
+          // ignore parse error
+        }
+      } else if (text.startsWith("PID:")) {
+        // PID:kp,kd,ki,base HOẶC PID:kp,kd,base
+        const parts = text.substring(4).split(',');
+        if (parts.length >= 4) {
+          document.getElementById('inputKp').value = parts[0];
+          document.getElementById('inputKd').value = parts[1];
+          document.getElementById('inputKi').value = parts[2];
+          document.getElementById('inputBase').value = parts[3];
+        } else if (parts.length === 3) {
+          document.getElementById('inputKp').value = parts[0];
+          document.getElementById('inputKd').value = parts[1];
+          document.getElementById('inputBase').value = parts[2];
+        }
+        log("Đã nhận PID từ robot: " + text);
+      } else if (text.startsWith("PROF:")) {
+        // PROF:s_min,e_slow
+        const parts = text.substring(5).split(',');
+        if (parts.length >= 2) {
+          document.getElementById('inputSpeedMin').value = parts[0];
+          document.getElementById('inputESlow').value = parts[1];
+          log("Đã nhận PROF từ robot: " + text);
+        }
+      } else if (text.startsWith("TURN:")) {
+        // TURN:out,in,base HOẶC TURN:out,in
+        const parts = text.substring(5).split(',');
+        if (parts.length >= 3) {
+          document.getElementById('inputTurnOut').value = parts[0];
+          document.getElementById('inputTurnIn').value = parts[1];
+          document.getElementById('inputTurnBase').value = parts[2];
+        } else if (parts.length === 2) {
+          document.getElementById('inputTurnOut').value = parts[0];
+          document.getElementById('inputTurnIn').value = parts[1];
+        }
+        log("Đã nhận TURN từ robot: " + text);
+      } else if (text.startsWith("LOG:RACE_FINISH:")) {
+        const finishSec = parseFloat(text.substring(16));
+        stopTimer(finishSec);
+        log("🏁 Robot về đích! Thời gian: " + finishSec.toFixed(3) + "s");
+      } else if (text === "LOG:AUTO_START") {
+        if (!isTimerRunning) startTimer();
+        log("Robot: " + text);
+      } else if (text === "LOG:MODE_MANUAL") {
+        if (isTimerRunning) stopTimer();
+        log("Robot: " + text);
+      } else {
+        log("Robot: " + text);
+      }
+    }
+
+    // Stopwatch / Lap Timer Logic
+    const timerDisplay = document.getElementById('timerDisplay');
+    const timerStatus = document.getElementById('timerStatus');
+    const lastLapDisplay = document.getElementById('lastLapDisplay');
+    const bestLapDisplay = document.getElementById('bestLapDisplay');
+    const btnResetTimer = document.getElementById('btnResetTimer');
+
+    let timerInterval = null;
+    let timerStartTime = 0;
+    let isTimerRunning = false;
+    let bestLapTime = parseFloat(localStorage.getItem('robot_best_lap')) || null;
+
+    if (bestLapTime) {
+      bestLapDisplay.textContent = formatTime(bestLapTime);
+    }
+
+    function formatTime(totalSeconds) {
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = Math.floor(totalSeconds % 60);
+      const ms = Math.floor((totalSeconds % 1) * 1000);
+      return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+    }
+
+    function startTimer() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerStartTime = performance.now();
+      isTimerRunning = true;
+      timerStatus.textContent = "🏎️ ĐANG ĐUA...";
+      timerStatus.style.color = "#f59e0b";
+      timerDisplay.style.color = "#38bdf8";
+
+      timerInterval = setInterval(() => {
+        const elapsed = (performance.now() - timerStartTime) / 1000;
+        timerDisplay.textContent = formatTime(elapsed);
+      }, 33);
+    }
+
+    function stopTimer(finishSec = null) {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+      isTimerRunning = false;
+
+      if (finishSec !== null && !isNaN(finishSec)) {
+        timerDisplay.textContent = formatTime(finishSec);
+        timerDisplay.style.color = "#22c55e";
+        timerStatus.textContent = `🏁 VỀ ĐÍCH! (${finishSec.toFixed(3)}s)`;
+        timerStatus.style.color = "#22c55e";
+        lastLapDisplay.textContent = formatTime(finishSec);
+
+        if (!bestLapTime || finishSec < bestLapTime) {
+          bestLapTime = finishSec;
+          localStorage.setItem('robot_best_lap', finishSec);
+          bestLapDisplay.textContent = formatTime(finishSec);
+          bestLapDisplay.style.color = "#f59e0b";
+          log(`🎉 KỶ LỤC MỚI: ${finishSec.toFixed(3)}s!`);
+        }
+      } else {
+        timerStatus.textContent = "⏹ ĐÃ DỪNG";
+        timerStatus.style.color = "var(--text-dim)";
+      }
+    }
+
+    btnResetTimer.addEventListener('click', () => {
+      stopTimer();
+      timerDisplay.textContent = "00:00.000";
+      timerDisplay.style.color = "#22c55e";
+      timerStatus.textContent = "SẴN SÀNG";
+      timerStatus.style.color = "var(--text-dim)";
+    });
+
+    // Event listeners
+    btnConnect.addEventListener('click', connectBLE);
+    btnDisconnect.addEventListener('click', disconnectBLE);
+
+    document.getElementById('btnCal').addEventListener('click', () => {
+      if (isTimerRunning) stopTimer();
+      sendCommand("CAL");
+    });
+    document.getElementById('btnAuto').addEventListener('click', () => {
+      startTimer();
+      sendCommand("AUTO");
+    });
+    document.getElementById('btnManual').addEventListener('click', () => {
+      if (isTimerRunning) stopTimer();
+      sendCommand("MANUAL");
+    });
+
+    // Manual controls
+    document.getElementById('btnFwd').addEventListener('click', () => sendCommand("FWD"));
+    document.getElementById('btnBwd').addEventListener('click', () => sendCommand("BWD"));
+    document.getElementById('btnLeft').addEventListener('click', () => sendCommand("LFT"));
+    document.getElementById('btnRight').addEventListener('click', () => sendCommand("RGT"));
+    document.getElementById('btnStop').addEventListener('click', () => sendCommand("STP"));
+
+    // Speed slider
+    const sliderSpeed = document.getElementById('sliderSpeed');
+    const txtSpeed = document.getElementById('txtSpeed');
+    sliderSpeed.addEventListener('input', (e) => {
+      txtSpeed.textContent = e.target.value;
+    });
+    sliderSpeed.addEventListener('change', (e) => {
+      sendCommand("SPD:" + e.target.value);
+    });
+
+    // Hàm parse số an toàn (chấp nhận cả dấu phẩy ',' và dấu chấm '.')
+    function parseNum(val, def = 0) {
+      if (typeof val === 'string') val = val.trim().replace(',', '.');
+      const num = parseFloat(val);
+      return isNaN(num) ? def : num;
+    }
+
+    // 1. Gửi PID
+    document.getElementById('btnSetPid').addEventListener('click', () => {
+      const kp = parseNum(document.getElementById('inputKp').value, 0.04);
+      const kd = parseNum(document.getElementById('inputKd').value, 0.4);
+      const ki = parseNum(document.getElementById('inputKi').value, 0.00005);
+      const base = parseInt(document.getElementById('inputBase').value) || 150;
+      sendCommand(`PID:${kp},${kd},${ki},${base}`);
+    });
+
+    // 2. Gửi PROF (Tốc độ theo đường)
+    document.getElementById('btnSetProf').addEventListener('click', () => {
+      const sMin = parseInt(document.getElementById('inputSpeedMin').value) || 110;
+      const eSlow = parseInt(document.getElementById('inputESlow').value) || 1800;
+      sendCommand(`PROF:${sMin},${eSlow}`);
+    });
+
+    // 3. Gửi TURN (Cua góc vuông 90°)
+    document.getElementById('btnSetTurn').addEventListener('click', () => {
+      const outSpd = parseInt(document.getElementById('inputTurnOut').value) || 60;
+      const inSpd = parseInt(document.getElementById('inputTurnIn').value) || 60;
+      const baseSpd = parseInt(document.getElementById('inputTurnBase').value) || 120;
+      sendCommand(`TURN:${outSpd},${inSpd},${baseSpd}`);
+    });
+
+    // 4. Đọc tất cả thông số từ xe
+    document.getElementById('btnGetAll').addEventListener('click', () => sendCommand("GETALL"));
+
+    // Keyboard shortcuts for Manual control
+    window.addEventListener('keydown', (e) => {
+      if (document.activeElement.tagName === 'INPUT') return;
+      if (e.key === 'ArrowUp' || e.key === 'w') sendCommand("FWD");
+      else if (e.key === 'ArrowDown' || e.key === 's') sendCommand("BWD");
+      else if (e.key === 'ArrowLeft' || e.key === 'a') sendCommand("LFT");
+      else if (e.key === 'ArrowRight' || e.key === 'd') sendCommand("RGT");
+      else if (e.key === ' ' || e.key === 'Escape') sendCommand("STP");
+    });
+  </script>
+</body>
+</html>
