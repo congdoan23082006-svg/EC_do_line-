@@ -29,5 +29,6 @@ extern const char *currentCaseName;
 void movePID(int base, int adjust);
 void lineFollowPID();
 void endLine();
+void resetTurnState();
 
 #endif // PID_CONTROL_H

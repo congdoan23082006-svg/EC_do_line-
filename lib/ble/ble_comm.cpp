@@ -48,6 +48,7 @@ class MyServerCallbacks : public BLEServerCallbacks {
         runLine = false;
         raceRunning = false;
         integralError = 0.0f;
+        resetTurnState();
         BLEDevice::startAdvertising();
     }
 };
@@ -145,6 +146,7 @@ void handleBLECommand(String cmd) {
         runLine = false;
         raceRunning = false;
         stopMotor();
+        resetTurnState();
         calibrated = false;
         calibrating = true;
         calEnd = millis() + CAL_TIME;
@@ -229,6 +231,7 @@ void handleBLECommand(String cmd) {
             return;
         }
         runLine = true;
+        resetTurnState();
         lastError = 0;
         integralError = 0.0f;
         lastLinePos = SETPOINT;
@@ -244,6 +247,7 @@ void handleBLECommand(String cmd) {
         runLine = false;
         raceRunning = false;
         stopMotor();
+        resetTurnState();
         integralError = 0.0f;
         currentModeName = "MANUAL";
         currentCaseName = "IDLE";

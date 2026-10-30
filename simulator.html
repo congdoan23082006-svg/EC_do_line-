@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🏎️ GIẢ LẬP XE DÒ LINE 2D - ESP32 QTR-8C PID SIMULATOR</title>
+  <style>
+    :root {
+      --bg: #090d16;
+      --card-bg: rgba(17, 24, 39, 0.85);
+      --card-border: #1f293d;
+      --accent: #00f0ff;
+      --accent-glow: rgba(0, 240, 255, 0.35);
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --text: #f3f4f6;
+      --text-dim: #9ca3af;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 12px;
+      overflow-x: hidden;
+    }
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      margin-bottom: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    h1 {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: 0.5px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      text-shadow: 0 0 10px var(--accent-glow);
+    }
+    .badge {
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-weight: 700;
+      background: #1e293b;
+      color: #94a3b8;
+    }
+    .badge-live {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--success);
+      border: 1px solid var(--success);
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    .main-container {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 14px;
+      flex: 1;
+    }
+    @media (max-width: 960px) {
+      .main-container {
+        grid-template-columns: 1fr;
+      }
+    }
+    .canvas-card {
+      background: #ffffff;
+      border: 2px solid #334155;
+      border-radius: 14px;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+    }
+    canvas {
+      display: block;
+      cursor: crosshair;
+    }
+    .track-overlay {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(8px);
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 0.8rem;
+      color: #e2e8f0;
+      pointer-events: none;
+    }
+    .controls-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 14px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    .card-title {
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .btn {
+      background: #1e293b;
+      color: #fff;
+      border: 1px solid var(--card-border);
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .btn:hover {
+      background: #334155;
+      border-color: #475569;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #050b14;
+      border-color: var(--accent);
+      font-weight: 700;
+    }
+    .btn-primary:hover {
+      background: #38bdf8;
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+    .btn-success {
+      background: var(--success);
+      color: #042f1a;
+      border-color: var(--success);
+      font-weight: 700;
+    }
+    .btn-danger {
+      background: var(--danger);
+      color: #fff;
+      border-color: var(--danger);
+    }
+    .btn-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+    .sensor-bar {
+      display: flex;
+      gap: 6px;
+      justify-content: space-between;
+      margin: 8px 0;
+      padding: 8px;
+      background: #0b1120;
+      border-radius: 8px;
+      border: 1px solid #1e293b;
+    }
+    .sensor-dot {
+      flex: 1;
+      height: 28px;
+      background: #1e293b;
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.65rem;
+      font-weight: 700;
+      color: #64748b;
+      transition: all 0.08s ease;
+      border: 1px solid #334155;
+    }
+    .sensor-dot.active {
+      background: #ef4444;
+      color: #ffffff;
+      border-color: #f87171;
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.7);
+    }
+    .sensor-dot.center {
+      border-bottom: 2px solid var(--accent);
+    }
+    .tele-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+    .tele-box {
+      background: #0b1120;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+    .tele-label {
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .tele-val {
+      font-size: 1.05rem;
+      font-weight: 800;
+      font-family: monospace;
+      color: #f8fafc;
+      margin-top: 2px;
+    }
+    .motor-bars {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 6px;
+    }
+    .motor-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.75rem;
+      font-family: monospace;
+    }
+    .bar-bg {
+      flex: 1;
+      height: 8px;
+      background: #1e293b;
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+    }
+    .bar-fill {
+      height: 100%;
+      background: var(--accent);
+      width: 50%;
+      transition: width 0.05s linear;
+    }
+    .bar-fill.neg {
+      background: #f43f5e;
+    }
+    .param-group {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 0.8rem;
+    }
+    .param-group label {
+      color: var(--text-dim);
+      font-weight: 600;
+    }
+    .param-group .val {
+      font-family: monospace;
+      font-weight: 700;
+      color: var(--accent);
+    }
+    input[type="range"] {
+      width: 100%;
+      height: 5px;
+      accent-color: var(--accent);
+      background: #1e293b;
+      border-radius: 4px;
+      margin-top: 4px;
+      cursor: pointer;
+    }
+    .lap-display {
+      font-size: 1.8rem;
+      font-weight: 900;
+      font-family: monospace;
+      text-align: center;
+      color: var(--success);
+      text-shadow: 0 0 10px rgba(16, 185, 129, 0.4);
+      margin: 4px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🏎️ VẬN HÀNH GIẢ LẬP XE DÒ LINE 2D (SIMULATOR)</h1>
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <a href="index.html" class="btn" style="text-decoration: none; font-size: 0.8rem;">📱 Mở Dashboard BLE</a>
+      <span class="badge badge-live" id="simStatus">ĐANG CHẠY</span>
+    </div>
+  </header>
+
+  <div class="main-container">
+    <div class="canvas-card" id="canvasContainer">
+      <canvas id="trackCanvas" width="860" height="620"></canvas>
+      <div class="track-overlay">
+        🏁 <b>Sa hình:</b> Đoạn thẳng cao tốc, Cua chữ S, <b>Góc vuông 90° Phải & Trái</b>, Vạch nét đứt, Vạch đích.
+        <br><span style="color: #38bdf8;">💡 Bấm chuột bất kỳ trên sa hình để dịch chuyển xe tới đó để test góc!</span>
+      </div>
+    </div>
+
+    <div class="controls-panel">
+      <div class="card">
+        <div class="card-title">🕹️ ĐIỀU KHIỂN CHẠY</div>
+        <div class="btn-group">
+          <button id="btnPlay" class="btn btn-success">▶ Chạy</button>
+          <button id="btnPause" class="btn btn-danger">⏸ Tạm dừng</button>
+          <button id="btnReset" class="btn">🔄 Reset</button>
+        </div>
+        <div style="margin-top: 10px; display: flex; gap: 8px;">
+          <button id="btnPreset120" class="btn btn-primary" style="flex: 1; font-size: 0.75rem;">Test (BASE 120)</button>
+          <button id="btnPreset210" class="btn" style="flex: 1; font-size: 0.75rem;">Đua (BASE 210)</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>📡 TRẠNG THÁI & 8 CẢM BIẾN</span>
+          <span id="caseNameBadge" style="color: var(--accent); font-weight: 800;">PID_FOLLOW</span>
+        </div>
+
+        <div class="sensor-bar">
+          <div id="s1" class="sensor-dot">S1</div>
+          <div id="s2" class="sensor-dot">S2</div>
+          <div id="s3" class="sensor-dot">S3</div>
+          <div id="s4" class="sensor-dot center">S4</div>
+          <div id="s5" class="sensor-dot center">S5</div>
+          <div id="s6" class="sensor-dot">S6</div>
+          <div id="s7" class="sensor-dot">S7</div>
+          <div id="s8" class="sensor-dot">S8</div>
+        </div>
+
+        <div class="tele-grid">
+          <div class="tele-box">
+            <div class="tele-label">VỊ TRÍ (0..7000)</div>
+            <div id="valPos" class="tele-val">3500</div>
+          </div>
+          <div class="tele-box">
+            <div class="tele-label">SAI SỐ (ERR)</div>
+            <div id="valErr" class="tele-val">0</div>
+          </div>
+          <div class="tele-box">
+            <div class="tele-label">PHA CUA 90°</div>
+            <div id="valPhase" class="tele-val" style="color: #f59e0b;">OFF</div>
+          </div>
+          <div class="tele-box">
+            <div class="tele-label">VẬN TỐC TÂM</div>
+            <div id="valSpeed" class="tele-val" style="color: var(--accent);">120</div>
+          </div>
+        </div>
+
+        <div class="motor-bars">
+          <div class="motor-row">
+            <span style="width: 50px;">BÁNH L:</span>
+            <div class="bar-bg"><div id="barL" class="bar-fill" style="width: 50%;"></div></div>
+            <span id="txtL" style="width: 38px; text-align: right;">120</span>
+          </div>
+          <div class="motor-row">
+            <span style="width: 50px;">BÁNH R:</span>
+            <div class="bar-bg"><div id="barR" class="bar-fill" style="width: 50%;"></div></div>
+            <span id="txtR" style="width: 38px; text-align: right;">120</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">⏱️ ĐỒNG HỒ VÒNG ĐUA (LAP TIMER)</div>
+        <div id="lapTime" class="lap-display">00:00.000</div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-dim); margin-top: 4px;">
+          <span>Vòng trước: <b id="lastLap" style="color: #fff;">--:--.---</b></span>
+          <span>Tốt nhất: <b id="bestLap" style="color: #f59e0b;">--:--.---</b></span>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">⚙️ TINH CHỈNH THÔNG SỐ CODE</div>
+        
+        <div class="param-group">
+          <label>Tốc độ cơ sở (BASE):</label>
+          <span class="val" id="dispBase">120</span>
+        </div>
+        <input type="range" id="sliderBase" min="60" max="255" value="120">
+
+        <div class="param-group" style="margin-top: 10px;">
+          <label>Hệ số tỉ lệ (KP):</label>
+          <span class="val" id="dispKp">0.040</span>
+        </div>
+        <input type="range" id="sliderKp" min="0.01" max="0.10" step="0.002" value="0.040">
+
+        <div class="param-group" style="margin-top: 10px;">
+          <label>Hệ số vi phân (KD):</label>
+          <span class="val" id="dispKd">0.45</span>
+        </div>
+        <input type="range" id="sliderKd" min="0.1" max="1.2" step="0.05" value="0.45">
+
+        <div class="param-group" style="margin-top: 10px;">
+          <label>Cua 90° - Bánh trong (TURN_IN):</label>
+          <span class="val" id="dispTurnIn">145</span>
+        </div>
+        <input type="range" id="sliderTurnIn" min="60" max="220" step="5" value="145">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('trackCanvas');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const TRACK_LINE_WIDTH = 26;
+
+    function drawTrack() {
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < canvas.width; x += 50) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += 50) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = '#0f172a';
+      ctx.lineWidth = TRACK_LINE_WIDTH;
+      ctx.lineCap = 'square';
+      ctx.lineJoin = 'miter';
+
+      ctx.beginPath();
+      ctx.moveTo(120, 530);
+      ctx.lineTo(740, 530); // Long straight
+      ctx.lineTo(740, 350); // Sharp 90° right
+
+      ctx.quadraticCurveTo(740, 240, 620, 240);
+      ctx.quadraticCurveTo(500, 240, 500, 150);
+      ctx.quadraticCurveTo(500, 90, 620, 90);
+      ctx.lineTo(740, 90); // 90° approach
+
+      ctx.lineTo(740, 90);
+      ctx.lineTo(120, 90); // Sharp 90° left
+      ctx.lineTo(120, 260);
+
+      ctx.quadraticCurveTo(120, 380, 260, 380);
+      ctx.quadraticCurveTo(380, 380, 380, 460);
+      ctx.quadraticCurveTo(380, 530, 260, 530);
+      ctx.lineTo(120, 530);
+      ctx.stroke();
+
+      // Dotted gap
+      ctx.fillStyle = '#f8fafc';
+      ctx.fillRect(400, 90 - TRACK_LINE_WIDTH/2 - 2, 60, TRACK_LINE_WIDTH + 4);
+
+      // Finish line
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(290, 530 - 32, 20, 64);
+      ctx.fillStyle = '#ffffff';
+      for (let fy = 530 - 32; fy < 530 + 32; fy += 8) {
+        ctx.fillRect(290 + ((fy % 16 === 0) ? 0 : 10), fy, 10, 8);
+      }
+    }
+
+    let KP = 0.04;
+    let KD = 0.45;
+    let KI = 0.00005;
+    let BASE = 120;
+    let SPEED_MIN = 90;
+    let E_SLOW = 1500;
+    let TURN_OUT = 50;
+    let TURN_IN = 145;
+    let TURN_BASE = 95;
+
+    let lastError = 0;
+    let integralError = 0;
+
+    let turnRightPhase = 0;
+    let turnLeftPhase = 0;
+    let turnStartTime = 0;
+    const TURN_90_TIMEOUT = 450;
+
+    let inGap = false;
+    let gapStart = 0;
+    let cnt = 0;
+    const GAP_STRAIGHT_MS = 100;
+    const GAP_MAX_COUNT = 5;
+    const GAP_ERR_MAX = 1500;
+
+    const robot = {
+      x: 360,
+      y: 530,
+      angle: 0,
+      wheelBase: 34,
+      sensorOffset: 26,
+      sensorWidth: 38,
+      vL: 0,
+      vR: 0,
+      sensorValues: [0, 0, 0, 0, 0, 0, 0, 0],
+      currentPattern: 0,
+      blackCount: 0,
+      lastLinePos: 3500,
+      trail: []
+    };
+
+    let isRunning = true;
+    let lastTime = performance.now();
+    let lapStartTime = 0;
+    let lastLapTime = null;
+    let bestLapTime = null;
+    let lapTimerActive = false;
+    let passedStart = false;
+
+    let trackImgData = null;
+    function updateTrackBuffer() {
+      drawTrack();
+      trackImgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    }
+
+    function samplePoint(px, py) {
+      const x = Math.round(px);
+      const y = Math.round(py);
+      if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) return 0;
+      const idx = (y * canvas.width + x) * 4;
+      const r = trackImgData.data[idx];
+      const g = trackImgData.data[idx + 1];
+      const b = trackImgData.data[idx + 2];
+      const brightness = (r + g + b) / 3;
+      return Math.round((255 - brightness) * (1000 / 255));
+    }
+
+    function readSensors() {
+      const frontX = robot.x + Math.cos(robot.angle) * robot.sensorOffset;
+      const frontY = robot.y + Math.sin(robot.angle) * robot.sensorOffset;
+      const perpAngle = robot.angle + Math.PI / 2;
+      const halfSpan = robot.sensorWidth / 2;
+
+      let sum = 0;
+      let avg = 0;
+      let black = 0;
+      let pat = 0;
+      let onLine = false;
+
+      for (let i = 0; i < 8; i++) {
+        const offset = -halfSpan + (i / 7) * robot.sensorWidth;
+        const sx = frontX + Math.cos(perpAngle) * offset;
+        const sy = frontY + Math.sin(perpAngle) * offset;
+
+        const val = samplePoint(sx, sy);
+        robot.sensorValues[i] = val;
+
+        if (val > 200) onLine = true;
+        if (val > 50) {
+          avg += val * (i * 1000);
+          sum += val;
+        }
+
+        if (val > 500) {
+          pat |= (1 << (7 - i));
+          black++;
+        }
+      }
+
+      robot.currentPattern = pat;
+      robot.blackCount = black;
+
+      if (!onLine) {
+        if (robot.lastLinePos < 3500) robot.lastLinePos = 0;
+        else robot.lastLinePos = 7000;
+      } else if (sum > 0) {
+        robot.lastLinePos = Math.round(avg / sum);
+      }
+    }
+
+    let appliedL = 0;
+    let appliedR = 0;
+    let currentCaseName = "PID_FOLLOW";
+
+    function move(left, right) {
+      appliedL = Math.max(-255, Math.min(255, left));
+      appliedR = Math.max(-255, Math.min(255, right));
+    }
+
+    function movePID(base, adjust) {
+      let L = base + adjust;
+      let R = base - adjust;
+      if (adjust > 150) L += 20;
+      if (adjust < -150) R += 20;
+      move(L, R);
+    }
+
+    function shortBrake() {
+      appliedL = 0;
+      appliedR = 0;
+    }
+
+    function runControlLoop(dtMs) {
+      readSensors();
+      const pat = robot.currentPattern;
+      const blackCount = robot.blackCount;
+
+      // 1. STATE MACHINE CUA 90 ĐỘ
+      if (turnRightPhase > 0) {
+        currentCaseName = "TURN_RIGHT_90";
+        move(TURN_BASE + TURN_OUT, TURN_BASE - TURN_IN);
+
+        if (performance.now() - turnStartTime > TURN_90_TIMEOUT) {
+          turnRightPhase = 0;
+          shortBrake();
+          integralError = 0;
+          lastError = 0;
+          return;
+        }
+
+        if (turnRightPhase === 1) {
+          if (!(pat & 0b00011000) || (performance.now() - turnStartTime > 45)) {
+            turnRightPhase = 2;
+          }
+        } else if (turnRightPhase === 2) {
+          if (pat & 0b00011000) {
+            turnRightPhase = 0;
+            shortBrake();
+            integralError = 0;
+            lastError = 0;
+            return;
+          }
+        }
+        return;
+      }
+
+      if (turnLeftPhase > 0) {
+        currentCaseName = "TURN_LEFT_90";
+        move(TURN_BASE - TURN_IN, TURN_BASE + TURN_OUT);
+
+        if (performance.now() - turnStartTime > TURN_90_TIMEOUT) {
+          turnLeftPhase = 0;
+          shortBrake();
+          integralError = 0;
+          lastError = 0;
+          return;
+        }
+
+        if (turnLeftPhase === 1) {
+          if (!(pat & 0b00011000) || (performance.now() - turnStartTime > 45)) {
+            turnLeftPhase = 2;
+          }
+        } else if (turnLeftPhase === 2) {
+          if (pat & 0b00011000) {
+            turnLeftPhase = 0;
+            shortBrake();
+            integralError = 0;
+            lastError = 0;
+            return;
+          }
+        }
+        return;
+      }
+
+      // 2. VẠCH ĐÍCH (Có khóa bảo vệ 1.5s đầu sau xuất phát)
+      const curLapSec = (performance.now() - lapStartTime) / 1000;
+      const canDetectFinish = !lapTimerActive || curLapSec > 1.5;
+
+      if ((pat === 0b11111111 || blackCount >= 7) && canDetectFinish) {
+        currentCaseName = "FINISH_LINE";
+        if (!passedStart && lapTimerActive) {
+          passedStart = true;
+          lastLapTime = curLapSec;
+          if (!bestLapTime || curLapSec < bestLapTime) bestLapTime = curLapSec;
+          lapStartTime = performance.now();
+        }
+      } else {
+        passedStart = false;
+        if (!lapTimerActive) {
+          lapTimerActive = true;
+          lapStartTime = performance.now();
+        }
+      }
+
+      // 3. NHẬN DIỆN CUA 90 ĐỘ (2 HOẶC 3 MẮT BIÊN CHỐNG SÓT LINE)
+      if (((pat & 0b00000011) === 0b00000011) && ((pat & 0b11000000) === 0) && blackCount <= 6) {
+        turnRightPhase = 1;
+        turnStartTime = performance.now();
+        currentCaseName = "TURN_RIGHT_90";
+        move(TURN_BASE + TURN_OUT, TURN_BASE - TURN_IN);
+        integralError = 0;
+        return;
+      }
+
+      if (((pat & 0b11000000) === 0b11000000) && ((pat & 0b00000011) === 0) && blackCount <= 6) {
+        turnLeftPhase = 1;
+        turnStartTime = performance.now();
+        currentCaseName = "TURN_LEFT_90";
+        move(TURN_BASE - TURN_IN, TURN_BASE + TURN_OUT);
+        integralError = 0;
+        return;
+      }
+
+      // 4. MẤT LINE & NÉT ĐỨT
+      if (blackCount === 0) {
+        if (!inGap && cnt < GAP_MAX_COUNT && Math.abs(lastError) <= GAP_ERR_MAX) {
+          inGap = true;
+          gapStart = performance.now();
+          cnt++;
+        }
+        if (inGap && (performance.now() - gapStart < GAP_STRAIGHT_MS)) {
+          currentCaseName = "GAP_STRAIGHT";
+          move(BASE, BASE);
+          return;
+        }
+        currentCaseName = "LOST_LINE";
+        if (lastError > 0) move(BASE + 20, -BASE);
+        else move(-BASE, BASE + 20);
+        integralError = 0;
+        return;
+      } else {
+        inGap = false;
+      }
+
+      // 5. BÁM LINE PID + PROFILE TỐC ĐỘ (PROF)
+      currentCaseName = "PID_FOLLOW";
+      const error = robot.lastLinePos - 3500;
+
+      // Reset biến đếm nét đứt khi bám vạch ổn định
+      if (blackCount >= 2 && Math.abs(error) < 600) {
+        cnt = 0;
+      }
+
+      // Triệt tiêu trễ tích phân (Anti-windup) khi đổi hướng cua
+      if ((error > 0 && lastError < 0) || (error < 0 && lastError > 0) || Math.abs(error) < 60) {
+        integralError = 0;
+      } else if (Math.abs(error) < 1200) {
+        integralError += error;
+        integralError = Math.max(-10000, Math.min(10000, integralError));
+      }
+
+      const adjust = Math.round(error * KP + integralError * KI + KD * (error - lastError));
+      lastError = error;
+
+      let currentBase = BASE;
+      if (E_SLOW > 0) {
+        let errAbs = Math.abs(error);
+        if (errAbs > E_SLOW) errAbs = E_SLOW;
+        currentBase = Math.round(BASE - ((BASE - SPEED_MIN) * errAbs) / E_SLOW);
+      }
+
+      movePID(currentBase, adjust);
+    }
+
+    function updatePhysics(dtSec) {
+      const SPEED_SCALE = 1.35;
+      const vL = appliedL * SPEED_SCALE;
+      const vR = appliedR * SPEED_SCALE;
+
+      robot.vL = vL;
+      robot.vR = vR;
+
+      const vCenter = (vL + vR) / 2;
+      const omega = (vR - vL) / robot.wheelBase;
+
+      robot.angle += omega * dtSec;
+      robot.x += vCenter * Math.cos(robot.angle) * dtSec;
+      robot.y += vCenter * Math.sin(robot.angle) * dtSec;
+
+      if (Math.random() < 0.35) {
+        robot.trail.push({ x: robot.x, y: robot.y });
+        if (robot.trail.length > 80) robot.trail.shift();
+      }
+    }
+
+    function render() {
+      ctx.putImageData(trackImgData, 0, 0);
+
+      if (robot.trail.length > 1) {
+        ctx.strokeStyle = 'rgba(0, 240, 255, 0.4)';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(robot.trail[0].x, robot.trail[0].y);
+        for (let i = 1; i < robot.trail.length; i++) {
+          ctx.lineTo(robot.trail[i].x, robot.trail[i].y);
+        }
+        ctx.stroke();
+      }
+
+      ctx.save();
+      ctx.translate(robot.x, robot.y);
+      ctx.rotate(robot.angle);
+
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+      ctx.shadowBlur = 10;
+      ctx.shadowOffsetX = 3;
+      ctx.shadowOffsetY = 3;
+
+      ctx.fillStyle = '#0f172a';
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.roundRect(-16, -15, 34, 30, [4, 10, 10, 4]);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(-6, -4, 14, 8);
+
+      ctx.fillStyle = '#334155';
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 1;
+      ctx.fillRect(-10, -19, 18, 5);
+      ctx.strokeRect(-10, -19, 18, 5);
+      ctx.fillRect(-10, 14, 18, 5);
+      ctx.strokeRect(-10, 14, 18, 5);
+
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(robot.sensorOffset, -robot.sensorWidth / 2 - 2);
+      ctx.lineTo(robot.sensorOffset, robot.sensorWidth / 2 + 2);
+      ctx.stroke();
+
+      for (let i = 0; i < 8; i++) {
+        const offset = -robot.sensorWidth / 2 + (i / 7) * robot.sensorWidth;
+        const val = robot.sensorValues[i];
+        ctx.beginPath();
+        ctx.arc(robot.sensorOffset, offset, 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = val > 500 ? '#ef4444' : '#22c55e';
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    function updateUI() {
+      for (let i = 0; i < 8; i++) {
+        const dot = document.getElementById(`s${i + 1}`);
+        if (robot.sensorValues[i] > 500) dot.classList.add('active');
+        else dot.classList.remove('active');
+      }
+
+      document.getElementById('valPos').textContent = robot.lastLinePos;
+      document.getElementById('valErr').textContent = robot.lastLinePos - 3500;
+      document.getElementById('caseNameBadge').textContent = currentCaseName;
+      document.getElementById('valSpeed').textContent = Math.round((appliedL + appliedR) / 2);
+
+      let phaseText = "OFF";
+      if (turnRightPhase > 0) phaseText = `R (Pha ${turnRightPhase})`;
+      if (turnLeftPhase > 0) phaseText = `L (Pha ${turnLeftPhase})`;
+      document.getElementById('valPhase').textContent = phaseText;
+
+      const pctL = Math.min(100, Math.max(0, (Math.abs(appliedL) / 255) * 100));
+      const pctR = Math.min(100, Math.max(0, (Math.abs(appliedR) / 255) * 100));
+      const barL = document.getElementById('barL');
+      const barR = document.getElementById('barR');
+
+      barL.style.width = `${pctL}%`;
+      barL.className = appliedL < 0 ? 'bar-fill neg' : 'bar-fill';
+      document.getElementById('txtL').textContent = appliedL;
+
+      barR.style.width = `${pctR}%`;
+      barR.className = appliedR < 0 ? 'bar-fill neg' : 'bar-fill';
+      document.getElementById('txtR').textContent = appliedR;
+
+      if (lapTimerActive) {
+        const curSec = (performance.now() - lapStartTime) / 1000;
+        document.getElementById('lapTime').textContent = formatTime(curSec);
+      }
+      if (lastLapTime) document.getElementById('lastLap').textContent = formatTime(lastLapTime);
+      if (bestLapTime) document.getElementById('bestLap').textContent = formatTime(bestLapTime);
+    }
+
+    function formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = Math.floor(sec % 60);
+      const ms = Math.floor((sec % 1) * 1000);
+      return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}.${String(ms).padStart(3, '0')}`;
+    }
+
+    function tick(now) {
+      const dtMs = Math.min(30, now - lastTime);
+      lastTime = now;
+
+      if (isRunning) {
+        runControlLoop(dtMs);
+        updatePhysics(dtMs / 1000);
+      }
+
+      render();
+      updateUI();
+      requestAnimationFrame(tick);
+    }
+
+    document.getElementById('btnPlay').onclick = () => {
+      isRunning = true;
+      document.getElementById('simStatus').textContent = "ĐANG CHẠY";
+      document.getElementById('simStatus').className = "badge badge-live";
+    };
+    document.getElementById('btnPause').onclick = () => {
+      isRunning = false;
+      document.getElementById('simStatus').textContent = "TẠM DỪNG";
+      document.getElementById('simStatus').className = "badge";
+    };
+    document.getElementById('btnReset').onclick = () => {
+      robot.x = 360;
+      robot.y = 530;
+      robot.angle = 0;
+      robot.trail = [];
+      appliedL = 0;
+      appliedR = 0;
+      turnRightPhase = 0;
+      turnLeftPhase = 0;
+      lastError = 0;
+      integralError = 0;
+      lapStartTime = performance.now();
+      lapTimerActive = true;
+    };
+
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const clickY = e.clientY - rect.top;
+      robot.x = clickX;
+      robot.y = clickY;
+      robot.trail = [];
+      turnRightPhase = 0;
+      turnLeftPhase = 0;
+    });
+
+    document.getElementById('btnPreset120').onclick = () => {
+      setParams(120, 0.04, 0.45, 145);
+    };
+    document.getElementById('btnPreset210').onclick = () => {
+      setParams(210, 0.042, 0.65, 160);
+    };
+
+    function setParams(base, kp, kd, turnIn) {
+      BASE = base;
+      KP = kp;
+      KD = kd;
+      TURN_IN = turnIn;
+
+      document.getElementById('sliderBase').value = base;
+      document.getElementById('dispBase').textContent = base;
+
+      document.getElementById('sliderKp').value = kp;
+      document.getElementById('dispKp').textContent = kp.toFixed(3);
+
+      document.getElementById('sliderKd').value = kd;
+      document.getElementById('dispKd').textContent = kd.toFixed(2);
+
+      document.getElementById('sliderTurnIn').value = turnIn;
+      document.getElementById('dispTurnIn').textContent = turnIn;
+    }
+
+    document.getElementById('sliderBase').oninput = (e) => {
+      BASE = parseInt(e.target.value);
+      document.getElementById('dispBase').textContent = BASE;
+    };
+    document.getElementById('sliderKp').oninput = (e) => {
+      KP = parseFloat(e.target.value);
+      document.getElementById('dispKp').textContent = KP.toFixed(3);
+    };
+    document.getElementById('sliderKd').oninput = (e) => {
+      KD = parseFloat(e.target.value);
+      document.getElementById('dispKd').textContent = KD.toFixed(2);
+    };
+    document.getElementById('sliderTurnIn').oninput = (e) => {
+      TURN_IN = parseInt(e.target.value);
+      document.getElementById('dispTurnIn').textContent = TURN_IN;
+    };
+
+    updateTrackBuffer();
+    requestAnimationFrame(tick);
+  </script>
+</body>
+</html>

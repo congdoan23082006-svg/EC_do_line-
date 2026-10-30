@@ -45,7 +45,7 @@ void MyQTR8C::calibrate() {
 }
 
 bool MyQTR8C::channelOk(uint8_t i) const {
-    return (_max[i] - _min[i]) >= QTR_MIN_RANGE;
+    return (_max[i] > _min[i]) && ((_max[i] - _min[i]) >= QTR_MIN_RANGE);
 }
 
 void MyQTR8C::saveCalibration() {
@@ -92,6 +92,8 @@ uint16_t MyQTR8C::normalize(uint8_t i, uint16_t raw) {
     if (!channelOk(i))
         return 0;
     uint16_t range = _max[i] - _min[i];
+    if (range < QTR_MIN_RANGE)
+        return 0;
     long v = ((long)(raw - min(raw, _min[i])) * 1000) / range;
     v = constrain(v, 0, 1000);
     return _invert ? 1000 - v : v;
