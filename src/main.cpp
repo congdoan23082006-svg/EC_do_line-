@@ -20,7 +20,7 @@ void setup() {
   // 2. Khởi tạo điều khiển 2 động cơ PWM
   motor_init();
 
-  // 3. Khởi tạo thuật toán PID Siêu Bám Line Mềm Mại & Đầm Chắc (Kp=1.80, Ki=0.0, Kd=3.90, Tốc độ chuẩn=120)
+  // 3. Khởi tạo thuật toán PID Dòng Chảy Liên Tục Êm Ru (Kp=1.65, Ki=0.0, Kd=3.20, Tốc độ chuẩn=125)
   pid_init(1.65f, 0.0f, 3.20f, 125);
 
   // 4. Khởi tạo BLE Server điều khiển không dây
