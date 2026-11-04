@@ -842,7 +842,7 @@
               <span>BẬT SIÊU BÁM SÀN (KHÔNG VĂNG XE)</span>
               <span class="grip-badge">AUTO CHẠY NGAY</span>
             </div>
-            <div class="grip-sub">Base: 120 | Kp: 1.80 | Kd: 3.9 (Phím tắt: G)</div>
+            <div class="grip-sub">Base: 125 | Kp: 1.65 | Kd: 3.20 (Phím tắt: G)</div>
           </div>
         </button>
 
@@ -863,12 +863,12 @@
         <div style="display: flex; flex-direction: column; gap: 6px;">
           <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted);">
             <span>Profiles tốc độ:</span>
-            <span id="activeProfileLabel" style="color: #fbbf24; font-weight: 600;">🔥 Siêu Bám (120)</span>
+            <span id="activeProfileLabel" style="color: #fbbf24; font-weight: 600;">🔥 Siêu Bám (125)</span>
           </div>
           <div class="profile-chips">
             <button class="chip-btn active" id="chipGrip" onclick="selectProfile('GRIP')">
               <span>🔥</span>
-              <span>Siêu Bám (120)</span>
+              <span>Siêu Bám (125)</span>
             </button>
             <button class="chip-btn" id="chip3S" onclick="selectProfile('3S')">
               <span>🛡️</span>
@@ -894,15 +894,15 @@
           <div class="pid-tuner-grid">
             <div class="pid-input-group">
               <label>Kp (Nhạy)</label>
-              <input type="number" id="inputKp" step="0.05" value="1.80">
+              <input type="number" id="inputKp" step="0.05" value="1.65">
             </div>
             <div class="pid-input-group">
               <label>Kd (Dập lắc)</label>
-              <input type="number" id="inputKd" step="0.2" value="3.90">
+              <input type="number" id="inputKd" step="0.2" value="3.20">
             </div>
             <div class="pid-input-group">
               <label>Base Speed</label>
-              <input type="number" id="inputBase" step="5" value="120">
+              <input type="number" id="inputBase" step="5" value="125">
             </div>
           </div>
           <button class="btn-apply-pid" onclick="applyCustomPid()">⚡ ÁP DỤNG THÔNG SỐ PID</button>
@@ -1573,9 +1573,9 @@
     // =================== CÁC HÀM XỬ LÝ SIÊU BÁM & PID ===================
     function triggerUltraGrip() {
       setActiveProfileChip('chipGrip', '🔥 Siêu Bám (120)');
-      document.getElementById('inputKp').value = '1.80';
-      document.getElementById('inputKd').value = '3.90';
-      document.getElementById('inputBase').value = '120';
+      document.getElementById('inputKp').value = '1.65';
+      document.getElementById('inputKd').value = '3.20';
+      document.getElementById('inputBase').value = '125';
       
       applyCustomPid();
       setTimeout(() => sendCommand('A'), 150); // Bật auto chạy ngay sau khi nạp PID
@@ -1585,7 +1585,7 @@
       badge.style.background = 'linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(239, 68, 68, 0.3))';
       badge.style.color = '#fbbf24';
       badge.style.border = '1px solid #f59e0b';
-      log('Đã nạp Profile Siêu Bám Chống Văng (Base: 120, Kp: 1.80, Kd: 3.90) & BẬT AUTO CHẠY NGAY!', 'rx');
+      log('Đã nạp Profile Siêu Bám Chống Văng (Base: 125, Kp: 1.65, Kd: 3.20) & BẬT AUTO CHẠY NGAY!', 'rx');
     }
 
     function selectProfile(type) {
