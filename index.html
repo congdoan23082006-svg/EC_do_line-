@@ -3,779 +3,819 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ESP32 Line Robot - Web Controller Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ESP32 Line Robot - Pro Racing Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link
-    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap"
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap"
     rel="stylesheet">
   <style>
     :root {
-      --bg-gradient: radial-gradient(circle at 50% 0%, #171e38 0%, #0a0d18 100%);
-      --card-bg: rgba(22, 29, 49, 0.7);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --accent-cyan: #00f2fe;
-      --accent-blue: #4facfe;
-      --accent-emerald: #10b981;
-      --accent-rose: #f43f5e;
-      --accent-amber: #f59e0b;
-      --accent-purple: #8b5cf6;
-      --text-main: #f8fafc;
+      --bg: #070913;
+      --surface: #0f1424;
+      --surface-card: #151b30;
+      --surface-card-hover: #1b233e;
+      --border: rgba(255, 255, 255, 0.08);
+      --border-focus: rgba(0, 242, 254, 0.5);
+      
+      --cyan: #00f2fe;
+      --blue: #38bdf8;
+      --emerald: #10b981;
+      --rose: #f43f5e;
+      --amber: #f59e0b;
+      --purple: #8b5cf6;
+      
+      --text: #f8fafc;
       --text-muted: #94a3b8;
-      --glass-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      --text-dim: #64748b;
+      
+      --glow-cyan: 0 0 20px rgba(0, 242, 254, 0.35);
+      --glow-emerald: 0 0 25px rgba(16, 185, 129, 0.4);
+      --glow-rose: 0 0 25px rgba(244, 63, 94, 0.4);
+      --radius-lg: 18px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
     }
 
     * {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
+      -webkit-tap-highlight-color: transparent;
       user-select: none;
     }
 
     body {
       font-family: 'Outfit', sans-serif;
-      background: var(--bg-gradient);
-      color: var(--text-main);
+      background: var(--bg);
+      background-image: 
+        radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 100% 100%, rgba(139, 92, 246, 0.08) 0%, transparent 40%);
+      color: var(--text);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      padding: 20px;
+      padding-bottom: 90px; /* Chừa khoảng trống cho thanh Bottom Bar */
       overflow-x: hidden;
     }
 
-    /* Header */
+    /* ================= HEADER ================= */
     header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(15, 20, 36, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 18px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 16px 24px;
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      backdrop-filter: blur(20px);
-      border-radius: 18px;
-      box-shadow: var(--glass-shadow);
-      margin-bottom: 24px;
+      gap: 12px;
     }
 
     .brand {
       display: flex;
       align-items: center;
-      gap: 14px;
+      gap: 10px;
     }
 
-    .brand-icon {
-      width: 44px;
-      height: 44px;
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
-      border-radius: 12px;
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      background: linear-gradient(135deg, var(--cyan), var(--purple));
+      border-radius: var(--radius-md);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 22px;
-      box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
+      font-size: 20px;
+      box-shadow: var(--glow-cyan);
     }
 
-    .brand-title h1 {
-      font-size: 20px;
+    .brand-info h1 {
+      font-size: 16px;
       font-weight: 700;
-      letter-spacing: -0.5px;
-      background: linear-gradient(to right, #ffffff, #94a3b8);
+      letter-spacing: -0.3px;
+      background: linear-gradient(to right, #fff, #94a3b8);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
 
-    .brand-title p {
-      font-size: 13px;
+    .brand-info p {
+      font-size: 11px;
       color: var(--text-muted);
     }
 
-    .connection-bar {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-
-    .status-badge {
+    .header-actions {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 14px;
+    }
+
+    .btn-connect {
+      padding: 8px 14px;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 12px;
+      border: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-ble {
+      background: linear-gradient(135deg, var(--cyan), #2563eb);
+      color: #050b14;
+      font-weight: 700;
+      box-shadow: 0 4px 15px rgba(0, 242, 254, 0.25);
+    }
+
+    .btn-ble:active {
+      transform: scale(0.96);
+    }
+
+    .btn-serial {
+      background: rgba(255, 255, 255, 0.08);
+      color: #e2e8f0;
+      border: 1px solid var(--border);
+    }
+
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
       border-radius: 999px;
-      font-size: 13px;
-      font-weight: 500;
+      font-size: 11px;
+      font-weight: 600;
       background: rgba(244, 63, 94, 0.15);
       color: #fda4af;
       border: 1px solid rgba(244, 63, 94, 0.3);
-      transition: all 0.3s ease;
     }
 
-    .status-badge.connected {
+    .status-pill.connected {
       background: rgba(16, 185, 129, 0.15);
       color: #6ee7b7;
       border-color: rgba(16, 185, 129, 0.3);
     }
 
     .status-dot {
-      width: 8px;
-      height: 8px;
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
       background: currentColor;
-      box-shadow: 0 0 10px currentColor;
+      box-shadow: 0 0 8px currentColor;
     }
 
-    .btn-connect {
-      padding: 10px 20px;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 14px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
+    /* ================= NAVIGATION TABS ================= */
+    .tab-bar {
+      display: flex;
+      padding: 10px 18px 4px 18px;
       gap: 8px;
-      transition: all 0.2s ease;
-      border: none;
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
     }
 
-    .btn-ble {
-      background: linear-gradient(135deg, #00f2fe, #4facfe);
-      color: #061122;
-      box-shadow: 0 4px 15px rgba(0, 242, 254, 0.3);
+    .tab-btn {
+      flex: 1;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.2s;
     }
 
-    .btn-ble:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0, 242, 254, 0.5);
+    .tab-btn.active {
+      background: var(--surface-card);
+      color: var(--cyan);
+      border-color: rgba(0, 242, 254, 0.3);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
     }
 
-    .btn-serial {
-      background: rgba(255, 255, 255, 0.08);
-      color: #e2e8f0;
-      border: 1px solid var(--card-border);
-    }
-
-    .btn-serial:hover {
-      background: rgba(255, 255, 255, 0.15);
-      transform: translateY(-2px);
-    }
-
-    /* Main Grid */
-    .dashboard-grid {
-      display: grid;
-      grid-template-columns: 1fr 1.3fr;
-      gap: 24px;
+    /* ================= MAIN CONTAINER ================= */
+    main {
+      max-width: 900px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 12px 18px;
       flex: 1;
     }
 
-    @media (max-width: 1024px) {
-      .dashboard-grid {
-        grid-template-columns: 1fr;
-      }
+    .tab-pane {
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+      animation: fadeIn 0.25s ease-out;
     }
 
+    .tab-pane.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ================= CARDS ================= */
     .card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      backdrop-filter: blur(20px);
-      border-radius: 20px;
-      padding: 24px;
-      box-shadow: var(--glass-shadow);
+      background: var(--surface-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
       display: flex;
       flex-direction: column;
-      gap: 20px;
+      gap: 14px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .card-title {
-      font-size: 16px;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      color: #cbd5e1;
-      padding-bottom: 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .card-title span {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    /* D-PAD CONTROLLER */
-    .dpad-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 12px;
-      margin: 10px 0;
-    }
-
-    .dpad-row {
-      display: flex;
-      gap: 12px;
-    }
-
-    .dpad-btn {
-      width: 76px;
-      height: 76px;
-      border-radius: 20px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #f8fafc;
-      font-size: 26px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-    }
-
-    .dpad-btn small {
-      font-size: 10px;
-      font-weight: 500;
-      color: var(--text-muted);
-      margin-top: 2px;
-    }
-
-    .dpad-btn:hover {
-      background: rgba(255, 255, 255, 0.12);
-      transform: scale(1.04);
-      border-color: var(--accent-cyan);
-    }
-
-    .dpad-btn:active,
-    .dpad-btn.active {
-      transform: scale(0.96);
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-      color: #061122;
-      box-shadow: 0 0 25px rgba(0, 242, 254, 0.7);
-    }
-
-    .dpad-btn:active small,
-    .dpad-btn.active small {
-      color: #061122;
-    }
-
-    .dpad-stop {
-      background: rgba(244, 63, 94, 0.15);
-      border-color: rgba(244, 63, 94, 0.4);
-      color: #fb7185;
-    }
-
-    .dpad-stop:hover {
-      background: rgba(244, 63, 94, 0.3);
-      border-color: #f43f5e;
-    }
-
-    .dpad-stop:active,
-    .dpad-stop.active {
-      background: var(--accent-rose);
-      color: #fff;
-      box-shadow: 0 0 25px rgba(244, 63, 94, 0.7);
-    }
-
-    /* Speed Control */
-    .speed-box {
-      background: rgba(0, 0, 0, 0.25);
-      padding: 18px;
-      border-radius: 16px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .speed-header {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 12px;
       font-size: 14px;
-      color: #cbd5e1;
-    }
-
-    .speed-val {
-      font-family: 'JetBrains Mono', monospace;
       font-weight: 700;
-      color: var(--accent-cyan);
-    }
-
-    input[type=range] {
-      width: 100%;
-      height: 8px;
-      border-radius: 4px;
-      background: #1e293b;
-      outline: none;
-      -webkit-appearance: none;
-      cursor: pointer;
-    }
-
-    input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-      box-shadow: 0 0 10px rgba(0, 242, 254, 0.7);
-      cursor: pointer;
-      transition: transform 0.1s ease;
-    }
-
-    input[type=range]::-webkit-slider-thumb:hover {
-      transform: scale(1.15);
-    }
-
-    .speed-presets {
+      color: #e2e8f0;
       display: flex;
+      align-items: center;
       gap: 8px;
-      margin-top: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
-    .btn-preset {
-      flex: 1;
-      padding: 6px 0;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      color: var(--text-muted);
-      border-radius: 8px;
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s;
+    /* ================= HUD LIVE MONITOR ================= */
+    .hud-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
     }
 
-    .btn-preset:hover {
-      background: rgba(0, 242, 254, 0.15);
-      color: var(--accent-cyan);
-      border-color: rgba(0, 242, 254, 0.3);
-    }
-
-    /* SENSOR VISUALIZER */
-    .sensor-visualizer {
+    .hud-box {
       background: rgba(0, 0, 0, 0.3);
-      padding: 20px;
-      border-radius: 16px;
       border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .sensor-bar {
-      display: grid;
-      grid-template-columns: repeat(16, 1fr);
-      gap: 6px;
-      margin: 16px 0;
-    }
-
-    .sensor-node {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .sensor-led {
-      width: 100%;
-      aspect-ratio: 1;
-      max-width: 28px;
-      border-radius: 6px;
-      background: #1e293b;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      transition: all 0.12s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      font-weight: 700;
-      color: #64748b;
-    }
-
-    /* Trạng thái vạch Đen (LED phát sáng) */
-    .sensor-led.black {
-      background: linear-gradient(135deg, #10b981, #059669);
-      border-color: #34d399;
-      color: #ffffff;
-      box-shadow: 0 0 14px rgba(16, 185, 129, 0.8);
-      transform: translateY(-2px);
-    }
-
-    .sensor-idx {
-      font-size: 10px;
-      font-family: 'JetBrains Mono', monospace;
-      color: var(--text-muted);
-    }
-
-    .line-indicator-preview {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 10px;
-      font-size: 12px;
-      color: var(--text-muted);
-    }
-
-    /* CALIBRATION WIZARD */
-    .calib-wizard {
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .calib-steps {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    .btn-calib {
-      padding: 14px 16px;
-      border-radius: 14px;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 4px;
-      transition: all 0.2s ease;
-      background: rgba(255, 255, 255, 0.04);
-      color: #f8fafc;
-      text-align: left;
-    }
-
-    .btn-calib strong {
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .btn-calib small {
-      font-size: 11px;
-      color: var(--text-muted);
-    }
-
-    .btn-calib-white:hover {
-      background: rgba(255, 255, 255, 0.15);
-      border-color: #ffffff;
-      box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
-    }
-
-    .btn-calib-black:hover {
-      background: rgba(16, 185, 129, 0.15);
-      border-color: var(--accent-emerald);
-      box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
-    }
-
-    .calib-extra-actions {
-      display: flex;
-      gap: 10px;
-    }
-
-    .btn-action-sm {
-      flex: 1;
+      border-radius: var(--radius-md);
       padding: 10px;
-      border-radius: 10px;
-      font-size: 12px;
-      font-weight: 600;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(255, 255, 255, 0.05);
-      color: #cbd5e1;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: all 0.2s;
-    }
-
-    .btn-action-sm:hover {
-      background: rgba(255, 255, 255, 0.12);
-      color: #fff;
-    }
-
-    /* TERMINAL CONSOLE */
-    .terminal-card {
-      grid-column: 1 / -1;
-      background: #090d16;
-      border-radius: 18px;
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 16px 20px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .terminal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    .terminal-logs {
-      height: 120px;
-      background: rgba(0, 0, 0, 0.5);
-      border-radius: 10px;
-      padding: 10px 14px;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 12px;
-      color: #38bdf8;
-      overflow-y: auto;
+      text-align: center;
       display: flex;
       flex-direction: column;
       gap: 4px;
     }
 
-    .log-line {
-      line-height: 1.4;
-      word-break: break-all;
+    .hud-label {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text-dim);
+      text-transform: uppercase;
     }
 
-    .log-line.tx {
-      color: #a78bfa;
+    .hud-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--cyan);
     }
 
-    .log-line.rx {
+    .hud-value.highlight {
       color: #34d399;
     }
 
-    .log-line.err {
-      color: #f87171;
-    }
-
-    .terminal-input-bar {
+    .hud-case-banner {
+      background: rgba(0, 242, 254, 0.06);
+      border: 1px solid rgba(0, 242, 254, 0.2);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
       display: flex;
-      gap: 10px;
-    }
-
-    .terminal-input-bar input {
-      flex: 1;
-      padding: 8px 14px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 8px;
-      color: #f8fafc;
-      font-family: 'JetBrains Mono', monospace;
+      justify-content: space-between;
+      align-items: center;
       font-size: 13px;
-      outline: none;
     }
 
-    .terminal-input-bar input:focus {
-      border-color: var(--accent-cyan);
-    }
-
-    .btn-send {
-      padding: 8px 18px;
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
-      color: #061122;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    /* Keyboard hint */
-    .key-hint {
-      display: inline-block;
-      padding: 2px 6px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 4px;
-      font-size: 10px;
-      font-family: 'JetBrains Mono', monospace;
-      margin-left: 4px;
-    }
-
-    /* ULTRA-GRIP HERO BUTTON */
-    .btn-ultra-grip {
+    /* ================= HERO BUTTON: SIÊU BÁM SÀN ================= */
+    .btn-ultra-hero {
       width: 100%;
-      padding: 14px 16px;
-      border-radius: 14px;
-      border: 1px solid rgba(245, 158, 11, 0.5);
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.22) 0%, rgba(239, 68, 68, 0.22) 50%, rgba(139, 92, 246, 0.22) 100%);
-      box-shadow: 0 0 25px rgba(245, 158, 11, 0.25), inset 0 0 15px rgba(255, 255, 255, 0.05);
+      background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 50%, #ec4899 100%);
+      border: none;
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      color: white;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      box-shadow: 0 6px 25px rgba(99, 102, 241, 0.4);
+      transition: all 0.2s;
+    }
+
+    .btn-ultra-hero:active {
+      transform: scale(0.98);
+      filter: brightness(1.1);
+    }
+
+    .ultra-hero-left {
       display: flex;
       align-items: center;
       gap: 14px;
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-      position: relative;
-      overflow: hidden;
       text-align: left;
     }
 
-    .btn-ultra-grip:hover {
-      transform: translateY(-2px) scale(1.01);
-      border-color: #f59e0b;
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.35) 0%, rgba(239, 68, 68, 0.35) 50%, rgba(139, 92, 246, 0.35) 100%);
-      box-shadow: 0 0 35px rgba(245, 158, 11, 0.55), inset 0 0 20px rgba(245, 158, 11, 0.2);
-    }
-
-    .btn-ultra-grip:active {
-      transform: scale(0.98);
-    }
-
-    .grip-icon {
-      font-size: 26px;
-      background: linear-gradient(135deg, #f59e0b, #ef4444);
-      width: 48px;
-      height: 48px;
-      border-radius: 12px;
+    .ultra-hero-icon {
+      font-size: 28px;
+      background: rgba(255, 255, 255, 0.2);
+      width: 50px;
+      height: 50px;
+      border-radius: 14px;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
-      flex-shrink: 0;
+      backdrop-filter: blur(8px);
     }
 
-    .grip-text {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-    }
-
-    .grip-title {
-      font-size: 13.5px;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .grip-badge {
-      font-size: 10px;
-      padding: 2px 7px;
-      background: #ef4444;
-      color: #fff;
-      border-radius: 999px;
+    .ultra-hero-text h3 {
+      font-size: 16px;
       font-weight: 800;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
-      animation: pulseGrip 1.8s infinite;
+      letter-spacing: -0.2px;
     }
 
-    @keyframes pulseGrip {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.8; transform: scale(1.05); }
-    }
-
-    .grip-sub {
-      font-size: 11px;
-      color: #cbd5e1;
-      font-family: 'JetBrains Mono', monospace;
-    }
-
-    /* PRESET PROFILES ROW */
-    .profile-chips {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
+    .ultra-hero-text p {
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.85);
       margin-top: 2px;
     }
 
-    .chip-btn {
-      padding: 8px 4px;
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      color: #cbd5e1;
+    .ultra-badge-action {
+      background: white;
+      color: #0f172a;
+      font-weight: 800;
       font-size: 11px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
-      transition: all 0.2s ease;
-      text-align: center;
+      padding: 6px 12px;
+      border-radius: 999px;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
     }
 
-    .chip-btn span:first-child {
-      font-size: 14px;
-    }
-
-    .chip-btn:hover {
-      background: rgba(0, 242, 254, 0.12);
-      border-color: var(--accent-cyan);
-      color: #fff;
-      transform: translateY(-2px);
-    }
-
-    .chip-btn.active {
-      background: linear-gradient(135deg, rgba(245, 158, 11, 0.25), rgba(239, 68, 68, 0.25));
-      border-color: #f59e0b;
-      color: #fbbf24;
-      box-shadow: 0 0 15px rgba(245, 158, 11, 0.3);
-    }
-
-    /* PID TUNER MINI CARD */
-    .pid-tuner-card {
-      background: rgba(0, 0, 0, 0.3);
-      border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 12px;
-      padding: 10px 12px;
-      display: flex;
-      flex-direction: column;
+    /* ================= SPEED PROFILES CHIPS ================= */
+    .profile-chips-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
       gap: 8px;
     }
 
-    .pid-tuner-grid {
+    .chip-card {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 10px 8px;
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: all 0.2s;
+    }
+
+    .chip-card.active {
+      background: rgba(0, 242, 254, 0.12);
+      border-color: var(--cyan);
+      box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+    }
+
+    .chip-emoji {
+      font-size: 18px;
+    }
+
+    .chip-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: #cbd5e1;
+    }
+
+    .chip-sub {
+      font-size: 10px;
+      color: var(--text-dim);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ================= STEPPER TUNER ================= */
+    .tuner-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .tuner-row {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      border-radius: var(--radius-md);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .tuner-info {
+      display: flex;
+      flex-direction: column;
+      min-width: 90px;
+    }
+
+    .tuner-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #e2e8f0;
+    }
+
+    .tuner-desc {
+      font-size: 10px;
+      color: var(--text-dim);
+    }
+
+    .stepper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-step {
+      width: 38px;
+      height: 38px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      background: rgba(255, 255, 255, 0.06);
+      color: white;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .btn-step:active {
+      transform: scale(0.9);
+      background: rgba(0, 242, 254, 0.2);
+    }
+
+    .stepper-input {
+      width: 65px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--cyan);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 15px;
+      font-weight: 700;
+      text-align: center;
+      padding: 6px 0;
+      outline: none;
+    }
+
+    .stepper-input:focus {
+      border-color: var(--cyan);
+    }
+
+    .btn-apply-all {
+      width: 100%;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 12px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+      margin-top: 4px;
+    }
+
+    .btn-apply-all:active {
+      transform: scale(0.98);
+    }
+
+    /* ================= TAB 2: CẢM BIẾN & CALIB ================= */
+    .sensor-visualizer-box {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .sensor-grid-16 {
+      display: grid;
+      grid-template-columns: repeat(16, 1fr);
+      gap: 4px;
+      background: #090d18;
+      padding: 10px 8px;
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .sensor-cell {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .sensor-led-pill {
+      width: 100%;
+      height: 48px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: #64748b;
+      transition: all 0.15s;
+    }
+
+    .sensor-led-pill.active {
+      background: linear-gradient(180deg, #10b981, #059669);
+      border-color: #34d399;
+      color: white;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+    }
+
+    .sensor-index-num {
+      font-size: 9px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-dim);
+    }
+
+    /* Con trỏ tâm lệch Centroid */
+    .centroid-track-container {
+      position: relative;
+      width: 100%;
+      height: 12px;
+      background: rgba(255, 255, 255, 0.06);
+      border-radius: 999px;
+      margin-top: 4px;
+    }
+
+    .centroid-center-tick {
+      position: absolute;
+      left: 50%;
+      top: -3px;
+      bottom: -3px;
+      width: 2px;
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateX(-50%);
+    }
+
+    .centroid-pointer {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--cyan);
+      box-shadow: 0 0 15px var(--cyan);
+      transform: translate(-50%, -50%);
+      transition: left 0.08s ease-out;
+    }
+
+    /* Khối bấm Calib lớn */
+    .calib-hero-card {
+      background: linear-gradient(135deg, rgba(0, 242, 254, 0.08), rgba(56, 189, 248, 0.03));
+      border: 1px solid rgba(0, 242, 254, 0.25);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn-sweep-calib {
+      width: 100%;
+      background: linear-gradient(135deg, #00f2fe, #38bdf8);
+      color: #04111d;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 16px;
+      font-size: 15px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      box-shadow: 0 4px 20px rgba(0, 242, 254, 0.35);
+      transition: all 0.2s;
+    }
+
+    .btn-sweep-calib:active {
+      transform: scale(0.98);
+    }
+
+    .calib-progress-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      overflow: hidden;
+      display: none;
+    }
+
+    .calib-progress-fill {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, var(--cyan), var(--emerald));
+      transition: width 0.1s linear;
+    }
+
+    .calib-actions-row {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
       gap: 8px;
     }
 
-    .pid-input-group {
+    .btn-action-outline {
+      padding: 10px;
+      border-radius: var(--radius-md);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border);
+      color: #cbd5e1;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .btn-action-outline:active {
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    /* ================= TAB 3: LÁI TAY & LOG ================= */
+    .dpad-box {
       display: flex;
       flex-direction: column;
-      gap: 3px;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
     }
 
-    .pid-input-group label {
-      font-size: 10px;
-      font-weight: 600;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .pid-input-group input {
-      width: 100%;
+    .dpad-btn {
+      width: 76px;
+      height: 60px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
       background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 8px;
-      padding: 6px 4px;
-      color: #fff;
+      color: white;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+    }
+
+    .dpad-btn small {
+      font-size: 9px;
+      color: var(--text-dim);
+    }
+
+    .dpad-btn:active, .dpad-btn.active {
+      background: rgba(0, 242, 254, 0.25);
+      border-color: var(--cyan);
+      transform: scale(0.95);
+    }
+
+    .dpad-btn.dpad-stop {
+      background: rgba(244, 63, 94, 0.2);
+      border-color: rgba(244, 63, 94, 0.4);
+      color: #fda4af;
+    }
+
+    .terminal-window {
+      background: #060913;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      height: 220px;
+      overflow-y: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .log-row {
+      line-height: 1.4;
+      word-break: break-all;
+    }
+
+    .log-row.rx { color: #38bdf8; }
+    .log-row.tx { color: #fbbf24; }
+    .log-row.err { color: #f43f5e; }
+
+    .terminal-input-wrap {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .terminal-input {
+      flex: 1;
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 8px 12px;
+      color: white;
       font-family: 'JetBrains Mono', monospace;
       font-size: 12px;
-      font-weight: 700;
       outline: none;
-      text-align: center;
     }
 
-    .pid-input-group input:focus {
-      border-color: var(--accent-cyan);
-      box-shadow: 0 0 10px rgba(0, 242, 254, 0.3);
+    /* ================= FIXED BOTTOM ACTION BAR ================= */
+    .bottom-action-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(10, 14, 26, 0.92);
+      backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 10px 18px;
+      display: flex;
+      gap: 12px;
+      max-width: 900px;
+      margin: 0 auto;
     }
 
-    .btn-apply-pid {
-      padding: 7px 10px;
-      border-radius: 8px;
-      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+    .btn-main-action {
+      flex: 1;
+      height: 52px;
+      border-radius: 14px;
       border: none;
-      color: #061122;
-      font-weight: 700;
-      font-size: 11px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 0.3px;
       cursor: pointer;
-      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: all 0.15s;
     }
 
-    .btn-apply-pid:hover {
-      box-shadow: 0 0 12px rgba(0, 242, 254, 0.5);
-      transform: translateY(-1px);
+    .btn-main-action:active {
+      transform: scale(0.97);
+    }
+
+    .btn-start-auto {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      box-shadow: var(--glow-emerald);
+    }
+
+    .btn-stop-emergency {
+      background: linear-gradient(135deg, #f43f5e, #be123c);
+      color: white;
+      box-shadow: var(--glow-rose);
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      body { padding-bottom: 85px; }
+      .brand-info p { display: none; }
+      .hud-grid { grid-template-columns: repeat(3, 1fr); }
+      .profile-chips-grid { grid-template-columns: repeat(2, 1fr); }
+      .sensor-led-pill { height: 42px; font-size: 9px; }
+      .btn-main-action { height: 48px; font-size: 14px; }
     }
   </style>
 </head>
@@ -785,277 +825,324 @@
   <!-- HEADER -->
   <header>
     <div class="brand">
-      <div class="brand-icon">🏎️</div>
-      <div class="brand-title">
+      <div class="brand-logo">🏎️</div>
+      <div class="brand-info">
         <h1>ESP32 LINE ROBOT</h1>
-        <p>Bảng điều khiển Web Bluetooth & Serial (16 Mắt Cảm Biến + Động Cơ)</p>
+        <p>16 Cảm Biến Quang Trở • Vi Sai Dòng Chảy</p>
       </div>
     </div>
 
-    <div class="connection-bar">
-      <div class="status-badge" id="statusBadge">
+    <div class="header-actions">
+      <div class="status-pill" id="statusBadge">
         <span class="status-dot"></span>
         <span id="statusText">Chưa kết nối</span>
       </div>
 
-      <!-- Nút kết nối Bluetooth không dây -->
       <button class="btn-connect btn-ble" id="btnConnectBle" onclick="toggleBleConnection()">
-        <span>📡 Kết nối Bluetooth</span>
+        <span>📡 Kết nối BLE</span>
       </button>
 
-      <!-- Nút kết nối qua cáp USB Serial nếu cắm máy tính -->
-      <button class="btn-connect btn-serial" id="btnConnectSerial" onclick="toggleSerialConnection()">
-        <span>🔌 Cáp USB Serial</span>
+      <button class="btn-connect btn-serial" id="btnConnectSerial" onclick="toggleSerialConnection()" title="Kết nối qua dây cáp USB nếu cắm máy tính">
+        <span>🔌 Cáp USB</span>
       </button>
     </div>
   </header>
 
-  <!-- DASHBOARD GRID -->
-  <div class="dashboard-grid">
+  <!-- NAVIGATION TABS -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('tabDrive')">
+      <span>🏎️ Đua & Tinh Chỉnh</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('tabSensor')">
+      <span>🎯 Cảm Biến & Calib</span>
+    </button>
+    <button class="tab-btn" onclick="switchTab('tabManual')">
+      <span>🎮 Lái Tay & Log</span>
+    </button>
+  </div>
 
-    <!-- CỘT TRÁI: ĐIỀU KHIỂN ĐỘNG CƠ -->
-    <div class="card">
-      <div class="card-title">
-        <span>🎮 ĐIỀU KHIỂN ĐỘNG CƠ</span>
-        <small style="font-weight: 400; color: var(--text-muted);">
-          Phím: <span class="key-hint">W</span> <span class="key-hint">A</span> <span class="key-hint">S</span>
-          <span class="key-hint">D</span> | Siêu Bám: <span class="key-hint">G</span> | Dừng: <span
-            class="key-hint">Space</span>
-        </small>
-      </div>
+  <!-- MAIN VIEW CONTAINER -->
+  <main>
 
-      <!-- AUTO PID MODE PANEL -->
-      <div
-        style="background: rgba(0, 242, 254, 0.06); border: 1px solid rgba(0, 242, 254, 0.2); border-radius: 16px; padding: 14px; display: flex; flex-direction: column; gap: 12px;">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-weight: 600; font-size: 13px; color: var(--accent-cyan);">🤖 CHẾ ĐỘ DÒ LINE TỰ ĐỘNG</span>
-          <span id="pidModeBadge"
-            style="font-size: 11px; padding: 3px 10px; border-radius: 999px; background: rgba(148, 163, 184, 0.2); color: #94a3b8; font-weight: 600;">LÁI
-            TAY (MANUAL)</span>
+    <!-- ================= TAB 1: ĐUA & TINH CHỈNH ================= -->
+    <div class="tab-pane active" id="tabDrive">
+
+      <!-- HUD MONITOR -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📊 TRẠNG THÁI HOẠT ĐỘNG THỰC TẾ</span>
+          <span id="pidModeBadge" style="font-size: 11px; padding: 2px 10px; border-radius: 999px; background: rgba(148, 163, 184, 0.2); color: #94a3b8; font-weight: 700;">
+            LÁI TAY (MANUAL)
+          </span>
         </div>
 
-        <!-- HERO BUTTON: SIÊU BÁM SÀN (BASE: 120) - BẬT AUTO LUÔN -->
-        <button class="btn-ultra-grip" id="btnUltraGrip" onclick="triggerUltraGrip()">
-          <div class="grip-icon">🏎️⚡</div>
-          <div class="grip-text">
-            <div class="grip-title">
-              <span>BẬT SIÊU BÁM SÀN (KHÔNG VĂNG XE)</span>
-              <span class="grip-badge">AUTO CHẠY NGAY</span>
-            </div>
-            <div class="grip-sub">Base: 125 | Kp: 1.65 | Kd: 3.20 (Phím tắt: G)</div>
+        <div class="hud-grid">
+          <div class="hud-box">
+            <span class="hud-label">Tốc Độ Bánh Trái</span>
+            <span class="hud-value" id="hudSpeedLeft">--</span>
           </div>
+          <div class="hud-box">
+            <span class="hud-label">Độ Lệch Tâm Line</span>
+            <span class="hud-value" id="hudError">0.0 mm</span>
+          </div>
+          <div class="hud-box">
+            <span class="hud-label">Tốc Độ Bánh Phải</span>
+            <span class="hud-value" id="hudSpeedRight">--</span>
+          </div>
+        </div>
+
+        <div class="hud-case-banner">
+          <span style="color: var(--text-muted); font-size: 12px;">Case đang xử lý:</span>
+          <span id="hudCaseName" style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: var(--cyan);">
+            Dừng xe (Sẵn sàng)
+          </span>
+        </div>
+      </div>
+
+      <!-- HERO BUTTON: 1 CHẠM SIÊU BÁM CHẠY NGAY -->
+      <button class="btn-ultra-hero" onclick="triggerUltraGrip()">
+        <div class="ultra-hero-left">
+          <div class="ultra-hero-icon">🔥</div>
+          <div class="ultra-hero-text">
+            <h3>BẬT SIÊU BÁM SÀN (125)</h3>
+            <p>Vi sai êm ru • Bo cua 90° dính line • Không văng xe</p>
+          </div>
+        </div>
+        <div class="ultra-badge-action">CHẠY NGAY ⚡</div>
+      </button>
+
+      <!-- PROFILES TỐC ĐỘ CÀI SẴN -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">⚡ CÁC PROFILE TỐC ĐỘ CÀI SẴN</span>
+          <span id="activeProfileLabel" style="font-size: 11px; color: var(--amber); font-weight: 700;">
+            🔥 Siêu Bám (125)
+          </span>
+        </div>
+
+        <div class="profile-chips-grid">
+          <div class="chip-card active" id="chipGrip" onclick="selectProfile('GRIP')">
+            <span class="chip-emoji">🔥</span>
+            <span class="chip-title">Siêu Bám</span>
+            <span class="chip-sub">Base: 125</span>
+          </div>
+          <div class="chip-card" id="chip3S" onclick="selectProfile('3S')">
+            <span class="chip-emoji">🛡️</span>
+            <span class="chip-title">Đầm Chắc</span>
+            <span class="chip-sub">Base: 110</span>
+          </div>
+          <div class="chip-card" id="chip2S" onclick="selectProfile('2S')">
+            <span class="chip-emoji">⚡</span>
+            <span class="chip-title">Tốc Độ</span>
+            <span class="chip-sub">Base: 135</span>
+          </div>
+          <div class="chip-card" id="chipRace" onclick="selectProfile('RACE')">
+            <span class="chip-emoji">🏁</span>
+            <span class="chip-title">Đua Max</span>
+            <span class="chip-sub">Base: 150</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- BỘ TINH CHỈNH STEPPER TIỆN LỢI (BẤM +/- CỰC NHANH TRÊN ĐIỆN THOẠI) -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🛠️ TINH CHỈNH PID & GA CƠ BẢN</span>
+          <button class="btn-action-outline" style="padding: 4px 10px; font-size: 11px;" onclick="sendCommand('PID')">
+            🔄 Đọc lại
+          </button>
+        </div>
+
+        <div class="tuner-grid">
+          <!-- BASE SPEED -->
+          <div class="tuner-row">
+            <div class="tuner-info">
+              <span class="tuner-name">Base Speed</span>
+              <span class="tuner-desc">Ga đường thẳng (0-255)</span>
+            </div>
+            <div class="stepper">
+              <button class="btn-step" onclick="stepValue('inputBase', -5, 0, 255, 0)">−</button>
+              <input type="number" id="inputBase" class="stepper-input" value="125" step="5">
+              <button class="btn-step" onclick="stepValue('inputBase', 5, 0, 255, 0)">+</button>
+            </div>
+          </div>
+
+          <!-- KP -->
+          <div class="tuner-row">
+            <div class="tuner-info">
+              <span class="tuner-name">Kp (Độ nhạy)</span>
+              <span class="tuner-desc">Lực ôm cua (1.0 - 5.0)</span>
+            </div>
+            <div class="stepper">
+              <button class="btn-step" onclick="stepValue('inputKp', -0.05, 0, 10, 2)">−</button>
+              <input type="number" id="inputKp" class="stepper-input" value="1.65" step="0.05">
+              <button class="btn-step" onclick="stepValue('inputKp', 0.05, 0, 10, 2)">+</button>
+            </div>
+          </div>
+
+          <!-- KD -->
+          <div class="tuner-row">
+            <div class="tuner-info">
+              <span class="tuner-name">Kd (Dập lắc)</span>
+              <span class="tuner-desc">Hãm quán tính đầu 9cm</span>
+            </div>
+            <div class="stepper">
+              <button class="btn-step" onclick="stepValue('inputKd', -0.1, 0, 20, 2)">−</button>
+              <input type="number" id="inputKd" class="stepper-input" value="3.20" step="0.1">
+              <button class="btn-step" onclick="stepValue('inputKd', 0.1, 0, 20, 2)">+</button>
+            </div>
+          </div>
+
+          <button class="btn-apply-all" onclick="applyCustomPid()">
+            ⚡ ÁP DỤNG THÔNG SỐ VÀO XE
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================= TAB 2: CẢM BIẾN & CALIB ================= -->
+    <div class="tab-pane" id="tabSensor">
+
+      <!-- THANH TRỰC QUAN 16 MẮT CẢM BIẾN -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">👁️ TRẠNG THÁI 16 MẮT QUANG TRỞ</span>
+          <span id="calibStatusBadge" style="font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(245, 158, 11, 0.2); color: #fbbf24; font-weight: 700;">
+            Chưa Calib
+          </span>
+        </div>
+
+        <div class="sensor-visualizer-box">
+          <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted);">
+            <span>Mắt 0 (Trái ngoài)</span>
+            <span id="sensorBinaryStr" style="font-family: 'JetBrains Mono', monospace; color: var(--cyan); font-weight: 700;">0000000000000000</span>
+            <span>Mắt 15 (Phải ngoài)</span>
+          </div>
+
+          <!-- 16 MẮT LED -->
+          <div class="sensor-grid-16" id="sensorGrid16">
+            <!-- 16 mắt được sinh tự động bằng JS -->
+          </div>
+
+          <!-- CON TRỎ VỊ TRÍ TÂM VẠCH LINE -->
+          <div style="margin-top: 6px;">
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); margin-bottom: 2px;">
+              <span>-75mm (Cực trái)</span>
+              <span>0mm (Chính tâm)</span>
+              <span>+75mm (Cực phải)</span>
+            </div>
+            <div class="centroid-track-container">
+              <div class="centroid-center-tick"></div>
+              <div class="centroid-pointer" id="centroidPointer"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- HỘP HIỆU CHUẨN LIA CẢM BIẾN SIÊU DỄ DÙNG -->
+      <div class="calib-hero-card">
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <span style="font-size: 15px; font-weight: 800; color: #fff;">🎯 HIỆU CHUẨN LIA CẢM BIẾN (4 GIÂY)</span>
+          <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">
+            👉 Đặt xe lên line. Bấm nút dưới và <b>dùng tay lia xe qua lại vạch đen 2-3 lần</b> trong 4 giây. Hệ thống tự động bắt dải sáng tối cho cả 16 mắt quang trở!
+          </p>
+        </div>
+
+        <button class="btn-sweep-calib" id="btnSweepCalib" onclick="startSweepCalibration()">
+          <span>🎯 BẮT ĐẦU LIA CALIB NGAY (4s)</span>
         </button>
 
-        <div style="display: flex; gap: 10px;">
-          <button
-            style="flex: 1; padding: 10px; border-radius: 10px; font-weight: 700; font-size: 13px; border: none; cursor: pointer; background: linear-gradient(135deg, #10b981, #059669); color: white; box-shadow: 0 0 15px rgba(16, 185, 129, 0.3);"
-            onclick="sendCommand('A')">
-            🚀 BẬT AUTO (A)
+        <div class="calib-progress-bar" id="calibProgressBar">
+          <div class="calib-progress-fill" id="calibProgressFill"></div>
+        </div>
+
+        <div class="calib-actions-row">
+          <button class="btn-action-outline" onclick="sendCommand('K')">
+            ⏹️ Chốt Sớm (K)
           </button>
-          <button
-            style="flex: 1; padding: 10px; border-radius: 10px; font-weight: 700; font-size: 13px; border: 1px solid rgba(244, 63, 94, 0.4); cursor: pointer; background: rgba(244, 63, 94, 0.15); color: #fda4af;"
-            onclick="sendCommand('M')">
-            🛑 TẮT AUTO (M)
+          <button class="btn-action-outline" onclick="sendCommand('INV')">
+            🔄 Đảo Cực (INV)
           </button>
-        </div>
-
-        <!-- CHỌN NHANH PROFILE CÀI SẴN -->
-        <div style="display: flex; flex-direction: column; gap: 6px;">
-          <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-muted);">
-            <span>Profiles tốc độ:</span>
-            <span id="activeProfileLabel" style="color: #fbbf24; font-weight: 600;">🔥 Siêu Bám (125)</span>
-          </div>
-          <div class="profile-chips">
-            <button class="chip-btn active" id="chipGrip" onclick="selectProfile('GRIP')">
-              <span>🔥</span>
-              <span>Siêu Bám (125)</span>
-            </button>
-            <button class="chip-btn" id="chip3S" onclick="selectProfile('3S')">
-              <span>🛡️</span>
-              <span>Đầm Chắc (110)</span>
-            </button>
-            <button class="chip-btn" id="chip2S" onclick="selectProfile('2S')">
-              <span>⚡</span>
-              <span>Tốc Độ (135)</span>
-            </button>
-            <button class="chip-btn" id="chipRace" onclick="selectProfile('RACE')">
-              <span>🏁</span>
-              <span>Đua Max (150)</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- TINH CHỈNH PID TRỰC TIẾP TRÊN WEB -->
-        <div class="pid-tuner-card">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 11px; font-weight: 600; color: #cbd5e1;">🛠️ TINH CHỈNH PID & BASE SPEED</span>
-            <button class="btn-action-sm" style="padding: 2px 8px; font-size: 10px;" onclick="sendCommand('PID')">Đọc lại PID</button>
-          </div>
-          <div class="pid-tuner-grid">
-            <div class="pid-input-group">
-              <label>Kp (Nhạy)</label>
-              <input type="number" id="inputKp" step="0.05" value="1.65">
-            </div>
-            <div class="pid-input-group">
-              <label>Kd (Dập lắc)</label>
-              <input type="number" id="inputKd" step="0.2" value="3.20">
-            </div>
-            <div class="pid-input-group">
-              <label>Base Speed</label>
-              <input type="number" id="inputBase" step="5" value="125">
-            </div>
-          </div>
-          <button class="btn-apply-pid" onclick="applyCustomPid()">⚡ ÁP DỤNG THÔNG SỐ PID</button>
-        </div>
-
-        <div
-          style="font-size: 12px; color: #cbd5e1; display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.25); padding: 6px 10px; border-radius: 8px;">
-          <span>Trường hợp hiện tại:</span>
-          <span id="currentCaseDisplay" style="font-family: 'JetBrains Mono'; font-weight: 700; color: #38bdf8;">Dừng
-            xe</span>
+          <button class="btn-action-outline" onclick="sendCommand('P')">
+            📊 Đọc Mắt (P)
+          </button>
         </div>
       </div>
 
-      <!-- D-PAD -->
-      <div class="dpad-container">
-        <div class="dpad-row">
+    </div>
+
+    <!-- ================= TAB 3: LÁI TAY & LOG ================= -->
+    <div class="tab-pane" id="tabManual">
+
+      <!-- D-PAD LÁI TAY -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">🎮 LÁI TAY KIỂM TRA ĐỘNG CƠ</span>
+          <span style="font-size: 11px; color: var(--text-dim);">Phím: W, A, S, D, Space</span>
+        </div>
+
+        <div class="dpad-box">
           <button class="dpad-btn" id="btnForward" onmousedown="sendCommand('F')" onmouseup="sendCommand('S')"
-            ontouchstart="event.preventDefault(); sendCommand('F')"
-            ontouchend="event.preventDefault(); sendCommand('S')">
+            ontouchstart="event.preventDefault(); sendCommand('F')" ontouchend="event.preventDefault(); sendCommand('S')">
             ▲<small>TIẾN (W)</small>
           </button>
-        </div>
-        <div class="dpad-row">
-          <button class="dpad-btn" id="btnLeft" onmousedown="sendCommand('L')" onmouseup="sendCommand('S')"
-            ontouchstart="event.preventDefault(); sendCommand('L')"
-            ontouchend="event.preventDefault(); sendCommand('S')">
-            ◄<small>TRÁI (A)</small>
-          </button>
-          <button class="dpad-btn dpad-stop" id="btnStop" onclick="sendCommand('S')">
-            ■<small>DỪNG</small>
-          </button>
-          <button class="dpad-btn" id="btnRight" onmousedown="sendCommand('R')" onmouseup="sendCommand('S')"
-            ontouchstart="event.preventDefault(); sendCommand('R')"
-            ontouchend="event.preventDefault(); sendCommand('S')">
-            ►<small>PHẢI (D)</small>
-          </button>
-        </div>
-        <div class="dpad-row">
+
+          <div style="display: flex; gap: 12px;">
+            <button class="dpad-btn" id="btnLeft" onmousedown="sendCommand('L')" onmouseup="sendCommand('S')"
+              ontouchstart="event.preventDefault(); sendCommand('L')" ontouchend="event.preventDefault(); sendCommand('S')">
+              ◄<small>TRÁI (A)</small>
+            </button>
+            <button class="dpad-btn dpad-stop" id="btnStop" onclick="sendCommand('S')">
+              ■<small>DỪNG</small>
+            </button>
+            <button class="dpad-btn" id="btnRight" onmousedown="sendCommand('R')" onmouseup="sendCommand('S')"
+              ontouchstart="event.preventDefault(); sendCommand('R')" ontouchend="event.preventDefault(); sendCommand('S')">
+              ►<small>PHẢI (D)</small>
+            </button>
+          </div>
+
           <button class="dpad-btn" id="btnBackward" onmousedown="sendCommand('B')" onmouseup="sendCommand('S')"
-            ontouchstart="event.preventDefault(); sendCommand('B')"
-            ontouchend="event.preventDefault(); sendCommand('S')">
+            ontouchstart="event.preventDefault(); sendCommand('B')" ontouchend="event.preventDefault(); sendCommand('S')">
             ▼<small>LÙI (S)</small>
           </button>
         </div>
       </div>
 
-      <!-- SPEED CONTROL -->
-      <div class="speed-box">
-        <div class="speed-header">
-          <span>⚡ Tốc độ PWM động cơ:</span>
-          <span class="speed-val" id="speedDisplay">180 / 255</span>
+      <!-- TERMINAL CONSOLE LOG -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">💻 LOG DỮ LIỆU THỜI GIAN THỰC</span>
+          <button class="btn-action-outline" style="padding: 2px 8px; font-size: 10px;" onclick="clearTerminal()">
+            Xóa Log
+          </button>
         </div>
-        <input type="range" id="speedSlider" min="0" max="255" value="180" oninput="updateSpeed(this.value)">
-        <div class="speed-presets">
-          <button class="btn-preset" onclick="setPresetSpeed(60)">Chậm (60)</button>
-          <button class="btn-preset" onclick="setPresetSpeed(120)">Vừa (120)</button>
-          <button class="btn-preset" onclick="setPresetSpeed(180)">Nhanh (180)</button>
-          <button class="btn-preset" onclick="setPresetSpeed(255)">Tối đa (255)</button>
+
+        <div class="terminal-window" id="terminalLogs">
+          <div class="log-row rx">[Hệ thống] Đã sẵn sàng. Bấm "Kết nối BLE" ở góc trên để bắt đầu!</div>
+        </div>
+
+        <div class="terminal-input-wrap">
+          <input type="text" id="customCmdInput" class="terminal-input" placeholder="Gõ lệnh thủ công (F, B, S, KP:1.65, V:140)..."
+            onkeydown="if(event.key==='Enter') sendCustomCommand()">
+          <button class="btn-action-outline" style="background: var(--cyan); color: #04111d; font-weight: 700;" onclick="sendCustomCommand()">
+            Gửi
+          </button>
         </div>
       </div>
+
     </div>
 
-    <!-- CỘT PHẢI: HIỆU CHUẨN CẢM BIẾN & HIỂN THỊ 16 MẮT -->
-    <div class="card">
-      <div class="card-title">
-        <span>👁️ CẢM BIẾN DÒ LINE (16 MẮT CD74HC4067)</span>
-        <span id="calibStatusBadge"
-          style="font-size: 11px; padding: 2px 8px; border-radius: 999px; background: rgba(245, 158, 11, 0.2); color: #fbbf24;">
-          Chưa Calib
-        </span>
-      </div>
+  </main>
 
-      <!-- THANH HIỂN THỊ 16 MẮT -->
-      <div class="sensor-visualizer">
-        <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted);">
-          <span>Trạng thái 16 mắt (Xanh: Vạch Đen, Xám: Nền Trắng):</span>
-          <span id="sensorBinaryStr"
-            style="font-family: 'JetBrains Mono'; color: var(--accent-cyan);">0000000000000000</span>
-        </div>
-
-        <div class="sensor-bar" id="sensorBar">
-          <!-- 16 Mắt tự sinh bằng JavaScript -->
-        </div>
-
-        <div class="line-indicator-preview">
-          <span>◄ Mắt 0 (Trái ngoài cùng)</span>
-          <span>Trung tâm (Mắt 7-8)</span>
-          <span>Mắt 15 (Phải ngoài cùng) ►</span>
-        </div>
-      </div>
-
-      <!-- BƯỚC CALIBRATION -->
-      <div class="calib-wizard">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <span style="font-size: 13px; font-weight: 600; color: #cbd5e1;">🎯 Hiệu chuẩn bằng cách LIA CẢM BIẾN (Sweep
-            Calibration):</span>
-        </div>
-        <div
-          style="font-size: 12px; color: var(--text-muted); background: rgba(0,0,0,0.25); padding: 10px 14px; border-radius: 10px; line-height: 1.5; border: 1px solid rgba(255,255,255,0.05);">
-          👉 <b>Cách làm:</b> Bấm nút dưới đây rồi <b>dùng tay lia thanh cảm biến qua lại ngang qua vạch đen 2 - 3
-            lần</b> trong 4 giây. Hệ thống sẽ tự bắt Min (trắng) và Max (đen) rồi tính ngưỡng trung bình cho từng mắt
-          (từ mắt 1 đến 14)!
-        </div>
-
-        <div style="display: flex; gap: 10px;">
-          <button
-            style="flex: 2; padding: 14px; border-radius: 12px; border: none; cursor: pointer; background: linear-gradient(135deg, #00f2fe, #4facfe); color: #061122; font-weight: 700; font-size: 14px; box-shadow: 0 0 15px rgba(0, 242, 254, 0.4); display: flex; align-items: center; justify-content: center; gap: 8px;"
-            onclick="sendCommand('C')">
-            <span>🎯 BẮT ĐẦU LIA CALIB (4 Giây)</span>
-          </button>
-          <button
-            style="flex: 1; padding: 14px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.15); cursor: pointer; background: rgba(255,255,255,0.06); color: #e2e8f0; font-weight: 600; font-size: 13px;"
-            onclick="sendCommand('K')">
-            ⏹️ Chốt Sớm
-          </button>
-        </div>
-
-        <div class="calib-extra-actions">
-          <button class="btn-action-sm" onclick="sendCommand('P')">
-            📊 Đọc mắt (P)
-          </button>
-          <button class="btn-action-sm" onclick="sendCommand('INV')">
-            🔄 Đảo Cực (INV)
-          </button>
-          <button class="btn-action-sm" id="btnAutoPoll" onclick="toggleAutoPoll()">
-            ⚡ Tự quét: BẬT
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- HÀNG DƯỚI: TERMINAL CONSOLE -->
-    <div class="terminal-card">
-      <div class="terminal-header">
-        <span>💻 LOG GIAO TIẾP VỚI ESP32</span>
-        <button onclick="clearTerminal()"
-          style="background: none; border: none; color: #64748b; font-size: 11px; cursor: pointer;">
-          Xóa màn hình log
-        </button>
-      </div>
-
-      <div class="terminal-logs" id="terminalLogs">
-        <div class="log-line rx">Hệ thống đã sẵn sàng. Hãy bấm "Kết nối Bluetooth" hoặc "Cáp USB Serial" để bắt đầu!
-        </div>
-      </div>
-
-      <div class="terminal-input-bar">
-        <input type="text" id="customCmdInput" placeholder="Nhập lệnh thủ công (ví dụ: F, B, W, K, V:220)..."
-          onkeydown="if(event.key==='Enter') sendCustomCommand()">
-        <button class="btn-send" onclick="sendCustomCommand()">Gửi Lệnh</button>
-      </div>
-    </div>
-
+  <!-- FIXED BOTTOM ACTION BAR (LUÔN CỐ ĐỊNH DƯỚI ĐÁY ĐỂ CHẠM VÀ DỪNG KHẨN CẤP NGAY LẬP TỨC) -->
+  <div class="bottom-action-bar">
+    <button class="btn-main-action btn-start-auto" onclick="startAutoMode()">
+      <span>🚀 BẬT AUTO (A)</span>
+    </button>
+    <button class="btn-main-action btn-stop-emergency" onclick="stopEmergency()">
+      <span>🛑 DỪNG KHẨN CẤP</span>
+    </button>
   </div>
 
   <script>
@@ -1069,7 +1156,6 @@
     let rxCharacteristic = null;
     let txCharacteristic = null;
 
-    // Web Serial
     let serialPort = null;
     let serialWriter = null;
     let serialReader = null;
@@ -1077,25 +1163,48 @@
     let connectionType = null; // 'ble' hoặc 'serial'
 
     let autoPollInterval = null;
-    let autoPollActive = true;
+    let isRobotInAutoMode = false;
+    let userInitiatedDisconnect = false;
+    let reconnectAttempts = 0;
+    const MAX_RECONNECT_ATTEMPTS = 5;
 
-    // Khởi tạo giao diện 16 mắt cảm biến
-    const sensorBar = document.getElementById('sensorBar');
+    // Sinh 16 mắt cảm biến trực quan
+    const sensorGrid16 = document.getElementById('sensorGrid16');
     for (let i = 0; i < 16; i++) {
-      const node = document.createElement('div');
-      node.className = 'sensor-node';
-      node.innerHTML = `
-        <div class="sensor-led" id="led_${i}">0</div>
-        <span class="sensor-idx">${i}</span>
+      const cell = document.createElement('div');
+      cell.className = 'sensor-cell';
+      cell.innerHTML = `
+        <div class="sensor-led-pill" id="led_${i}">0</div>
+        <span class="sensor-index-num">${i}</span>
       `;
-      sensorBar.appendChild(node);
+      sensorGrid16.appendChild(cell);
+    }
+
+    // =================== TAB SWITCHING ===================
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach((btn, idx) => {
+        btn.classList.toggle('active', 
+          (tabId === 'tabDrive' && idx === 0) ||
+          (tabId === 'tabSensor' && idx === 1) ||
+          (tabId === 'tabManual' && idx === 2)
+        );
+      });
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      const activePane = document.getElementById(tabId);
+      if (activePane) activePane.classList.add('active');
+    }
+
+    // Rung phản hồi haptic
+    function vibrate(ms = 30) {
+      if (navigator.vibrate) navigator.vibrate(ms);
     }
 
     // =================== LOGGING & UI ===================
     function log(message, type = '') {
       const logs = document.getElementById('terminalLogs');
+      if (!logs) return;
       const line = document.createElement('div');
-      line.className = `log-line ${type}`;
+      line.className = `log-row ${type}`;
       const time = new Date().toLocaleTimeString();
       line.textContent = `[${time}] ${message}`;
       logs.appendChild(line);
@@ -1115,9 +1224,9 @@
 
       if (connected) {
         badge.classList.add('connected');
-        text.textContent = `Đã kết nối qua ${typeName}`;
+        text.textContent = typeName;
         if (connectionType === 'ble') {
-          btnBle.innerHTML = '<span>❌ Ngắt Bluetooth</span>';
+          btnBle.innerHTML = '<span>❌ Ngắt BLE</span>';
         } else {
           btnSerial.innerHTML = '<span>❌ Ngắt USB</span>';
         }
@@ -1125,8 +1234,8 @@
       } else {
         badge.classList.remove('connected');
         text.textContent = 'Chưa kết nối';
-        btnBle.innerHTML = '<span>📡 Kết nối Bluetooth</span>';
-        btnSerial.innerHTML = '<span>🔌 Cáp USB Serial</span>';
+        btnBle.innerHTML = '<span>📡 Kết nối BLE</span>';
+        btnSerial.innerHTML = '<span>🔌 Cáp USB</span>';
         connectionType = null;
         stopAutoPoll();
       }
@@ -1140,12 +1249,12 @@
       }
 
       if (!navigator.bluetooth) {
-        alert('Trình duyệt của bạn chưa hỗ trợ Web Bluetooth API. Hãy sử dụng Google Chrome hoặc Microsoft Edge!');
+        alert('Trình duyệt chưa hỗ trợ Web Bluetooth. Vui lòng dùng Google Chrome hoặc Edge!');
         return;
       }
 
       try {
-        log('Đang quét thiết bị Bluetooth...', 'rx');
+        log('Đang quét tìm thiết bị ESP32...', 'rx');
         bleDevice = await navigator.bluetooth.requestDevice({
           acceptAllDevices: true,
           optionalServices: [NORDIC_SERVICE_UUID]
@@ -1153,16 +1262,13 @@
 
         bleDevice.addEventListener('gattserverdisconnected', onBleDisconnected);
 
-        log(`Đang kết nối tới ${bleDevice.name || 'ESP32'}...`, 'rx');
+        log(`Đã chọn thiết bị: "${bleDevice.name || 'Không tên'}". Đang kết nối...`, 'rx');
         bleServer = await bleDevice.gatt.connect();
 
-        log('Đang tìm dịch vụ Nordic UART...', 'rx');
         const service = await bleServer.getPrimaryService(NORDIC_SERVICE_UUID);
-
         rxCharacteristic = await service.getCharacteristic(RX_CHAR_UUID);
         txCharacteristic = await service.getCharacteristic(TX_CHAR_UUID);
 
-        // Bật notify nhận phản hồi từ ESP32
         await txCharacteristic.startNotifications();
         txCharacteristic.addEventListener('characteristicvaluechanged', (e) => {
           const value = new TextDecoder().decode(e.target.value);
@@ -1170,17 +1276,17 @@
         });
 
         connectionType = 'ble';
-        updateConnectionStatus(true, 'Bluetooth (BLE)');
-        log('Kết nối Bluetooth THÀNH CÔNG!', 'rx');
+        reconnectAttempts = 0;
+        updateConnectionStatus(true, 'Bluetooth (Sẵn sàng)');
+        log('✅ KẾT NỐI BLUETOOTH THÀNH CÔNG!', 'rx');
+        vibrate(50);
+
+        setTimeout(() => sendCommand('PID'), 300);
       } catch (err) {
         log(`Lỗi kết nối Bluetooth: ${err.message}`, 'err');
         updateConnectionStatus(false);
       }
     }
-
-    let userInitiatedDisconnect = false;
-    let reconnectAttempts = 0;
-    const MAX_RECONNECT_ATTEMPTS = 5;
 
     function onBleDisconnected() {
       updateConnectionStatus(false);
@@ -1189,25 +1295,23 @@
         userInitiatedDisconnect = false;
         return;
       }
-
-      log('⚠️ Mất kết nối Bluetooth bất ngờ! Đang tự động kết nối lại...', 'err');
+      log('⚠️ Mất kết nối Bluetooth! Đang tự động kết nối lại...', 'err');
       attemptReconnectBle();
     }
 
     async function attemptReconnectBle() {
       if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS || !bleDevice) {
-        log('❌ Không thể tự động phục hồi sau 5 lần thử. Vui lòng bấm "Kết nối Bluetooth" để kết nối lại.', 'err');
+        log('❌ Không thể tự phục hồi sau 5 lần. Hãy bấm "Kết nối BLE" lại.', 'err');
         reconnectAttempts = 0;
         return;
       }
 
       reconnectAttempts++;
       const text = document.getElementById('statusText');
-      if (text) text.textContent = `Đang kết nối lại... (Lần ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`;
+      if (text) text.textContent = `Kết nối lại... (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`;
 
       setTimeout(async () => {
         try {
-          log(`Đang thử kết nối lại BLE (Lần ${reconnectAttempts})...`, 'rx');
           bleServer = await bleDevice.gatt.connect();
           const service = await bleServer.getPrimaryService(NORDIC_SERVICE_UUID);
           rxCharacteristic = await service.getCharacteristic(RX_CHAR_UUID);
@@ -1222,9 +1326,8 @@
           connectionType = 'ble';
           reconnectAttempts = 0;
           updateConnectionStatus(true, 'Bluetooth (Đã phục hồi)');
-          log('✅ ĐÃ TỰ ĐỘNG PHỤC HỒI KẾT NỐI BLUETOOTH THÀNH CÔNG!', 'rx');
+          log('✅ ĐÃ PHỤC HỒI KẾT NỐI BLUETOOTH THÀNH CÔNG!', 'rx');
         } catch (err) {
-          log(`Lần kết nối lại ${reconnectAttempts} thất bại: ${err.message}`, 'err');
           attemptReconnectBle();
         }
       }, 1200);
@@ -1245,21 +1348,17 @@
         disconnectSerial();
         return;
       }
-
       if (!navigator.serial) {
-        alert('Trình duyệt chưa hỗ trợ Web Serial. Hãy dùng Chrome hoặc Edge trên máy tính!');
+        alert('Trình duyệt chưa hỗ trợ Web Serial. Dùng Chrome/Edge trên máy tính!');
         return;
       }
-
       try {
         serialPort = await navigator.serial.requestPort();
         await serialPort.open({ baudRate: 115200 });
-
         serialWriter = serialPort.writable.getWriter();
         connectionType = 'serial';
         updateConnectionStatus(true, 'USB Serial (115200)');
         log('Đã mở cổng USB Serial thành công!', 'rx');
-
         readSerialLoop();
       } catch (err) {
         log(`Lỗi cổng Serial: ${err.message}`, 'err');
@@ -1269,9 +1368,8 @@
 
     async function readSerialLoop() {
       const textDecoder = new TextDecoderStream();
-      const readableStreamClosed = serialPort.readable.pipeTo(textDecoder.writable);
+      serialPort.readable.pipeTo(textDecoder.writable);
       serialReader = textDecoder.readable.getReader();
-
       let lineBuffer = '';
       try {
         while (true) {
@@ -1279,7 +1377,7 @@
           if (done) break;
           lineBuffer += value;
           const lines = lineBuffer.split('\n');
-          lineBuffer = lines.pop(); // giữ lại phần chưa đủ dòng
+          lineBuffer = lines.pop();
           for (const line of lines) {
             handleIncomingData(line.trim());
           }
@@ -1296,26 +1394,22 @@
         if (serialReader) await serialReader.cancel();
         if (serialWriter) await serialWriter.close();
         if (serialPort) await serialPort.close();
-      } catch (e) { }
+      } catch (e) {}
       updateConnectionStatus(false);
     }
 
-    // =================== GỬI & NHẬN LỆNH (CÓ HÀNG ĐỢI TUẦN TỰ CHỐNG NGHẼN BLE) ===================
+    // =================== GỬI NHẬN LỆNH (HÀNG ĐỢI TUẦN TỰ) ===================
     const commandQueue = [];
     let isSendingCommand = false;
-    let isRobotInAutoMode = false;
 
     async function sendCommand(cmd) {
       if (!isConnected) {
         log(`Chưa kết nối! Không thể gửi: "${cmd}"`, 'err');
         return;
       }
-
-      // Nếu lệnh trùng lặp liên tiếp (ví dụ lặp phím hoặc lặp P) thì bỏ qua
       if (commandQueue.length > 0 && commandQueue[commandQueue.length - 1] === cmd && cmd === 'P') {
         return;
       }
-
       commandQueue.push(cmd);
       processCommandQueue();
     }
@@ -1328,10 +1422,8 @@
       try {
         log(`TX -> ${cmd}`, 'tx');
         const data = new TextEncoder().encode(cmd + '\n');
-
         if (connectionType === 'ble' && rxCharacteristic) {
           await rxCharacteristic.writeValueWithoutResponse(data);
-          // Đệm nhẹ 25ms để stack Bluetooth trên browser và ESP32 tiêu thụ gói tin an toàn
           await new Promise(r => setTimeout(r, 25));
         } else if (connectionType === 'serial' && serialWriter) {
           await serialWriter.write(data);
@@ -1346,23 +1438,20 @@
       }
     }
 
+    // Xử lý dữ liệu ESP32 phản hồi
     function handleIncomingData(raw) {
       log(`RX <- ${raw}`, 'rx');
 
-      // 1. Nhận chuỗi trạng thái 16 mắt cảm biến: "SENSORS: 0000001100000000"
+      // 1. Nhận trạng thái 16 mắt: SENSORS: 0000001100000000
       if (raw.includes('SENSORS:')) {
         const match = raw.match(/SENSORS:\s*([01]{16})/);
-        if (match && match[1]) {
-          updateSensorLeds(match[1]);
-        }
-      } else if (raw.match(/^[01 ]{31,32}$/)) { // Dạng in chuỗi cách nhau dấu cách: "0 0 1 1 ..."
+        if (match && match[1]) updateSensorLeds(match[1]);
+      } else if (raw.match(/^[01 ]{31,32}$/)) {
         const clean = raw.replace(/\s+/g, '');
-        if (clean.length === 16) {
-          updateSensorLeds(clean);
-        }
+        if (clean.length === 16) updateSensorLeds(clean);
       }
 
-      // 2. Nhận thông báo hiệu chuẩn thành công
+      // 2. Nhận trạng thái Calib
       if (raw.includes('CALIB THANH CONG') || raw.includes('Hieu chuan xong')) {
         const badge = document.getElementById('calibStatusBadge');
         badge.textContent = 'Đã Hiệu Chuẩn';
@@ -1370,195 +1459,189 @@
         badge.style.color = '#34d399';
       }
 
-      // 3. Nhận trạng thái Case PID từ USB Serial: "[CASE 1: Bam Line PID] Err: 2.5 | Corr: ..."
-      if (raw.includes('[CASE')) {
-        const caseMatch = raw.match(/\[(CASE[^\]]+)\]/);
-        if (caseMatch && caseMatch[1]) {
-          document.getElementById('currentCaseDisplay').textContent = caseMatch[1];
-          const badge = document.getElementById('pidModeBadge');
-          badge.textContent = 'DÒ LINE (AUTO)';
-          badge.style.background = 'rgba(16, 185, 129, 0.2)';
-          badge.style.color = '#34d399';
-        }
-      }
-
-      // 4. Nhận trạng thái PWM Telemetry từ BLE: "PWM: L=120 R=100 | Err=2.5 | Case=CASE 1: Bam Line PID"
+      // 3. Nhận PWM Telemetry: PWM: L=120 R=100 | Err=2.5 | Case=...
       if (raw.includes('PWM:')) {
         const pwmMatch = raw.match(/PWM:\s*L=(-?\d+)\s+R=(-?\d+)\s*\|\s*Err=(-?[\d\.]+)(?:\s*\|\s*Case=([^|\r\n]+))?/);
         if (pwmMatch) {
-          const leftPwm = pwmMatch[1];
-          const rightPwm = pwmMatch[2];
-          const errVal = pwmMatch[3];
-          const caseName = pwmMatch[4];
+          document.getElementById('hudSpeedLeft').textContent = pwmMatch[1];
+          document.getElementById('hudSpeedRight').textContent = pwmMatch[2];
+          const errVal = parseFloat(pwmMatch[3]);
+          document.getElementById('hudError').textContent = `${errVal > 0 ? '+' : ''}${errVal.toFixed(1)} mm`;
 
+          // Cập nhật vị trí con trỏ Centroid (-75 đến +75 quy đổi sang 0% - 100%)
+          const pct = Math.max(0, Math.min(100, ((errVal + 75) / 150) * 100));
+          const pointer = document.getElementById('centroidPointer');
+          if (pointer) pointer.style.left = `${pct}%`;
+
+          const caseName = pwmMatch[4];
           if (caseName) {
-            document.getElementById('currentCaseDisplay').textContent = `${caseName.trim()} [Err: ${errVal}]`;
-            const badge = document.getElementById('pidModeBadge');
-            badge.textContent = 'DÒ LINE (AUTO)';
-            badge.style.background = 'rgba(16, 185, 129, 0.2)';
-            badge.style.color = '#34d399';
+            document.getElementById('hudCaseName').textContent = caseName.trim();
           }
         }
       }
 
-      // 5. Nhận thông báo đổi cực tính cảm biến
-      if (raw.includes('POLARITY:')) {
-        log(`Đã cập nhật cực tính: ${raw}`, 'rx');
-      }
-
-      // 6. Nhận thông báo chuyển chế độ Auto / Manual / Siêu Bám
-      if (raw.includes('SIEU BAM') || raw.includes('ULTRA-GRIP')) {
+      // 4. Nhận trạng thái chế độ Auto / Manual
+      if (raw.includes('SIEU BAM') || raw.includes('BAT CHAY TU DONG') || raw.includes('BAT AUTO')) {
         isRobotInAutoMode = true;
         const badge = document.getElementById('pidModeBadge');
-        badge.textContent = 'SIÊU BÁM (AUTO ON)';
-        badge.style.background = 'linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(239, 68, 68, 0.3))';
-        badge.style.color = '#fbbf24';
-        badge.style.border = '1px solid #f59e0b';
-        document.getElementById('currentCaseDisplay').textContent = 'Đang chạy Siêu Bám (Pin 3S)...';
-        setActiveProfileChip('chipGrip', '🔥 Siêu Bám Pin 3S');
-      } else if (raw.includes('MODE: BAT CHAY TU DONG') || raw.includes('BAT AUTO')) {
-        isRobotInAutoMode = true;
-        const badge = document.getElementById('pidModeBadge');
-        badge.textContent = 'DÒ LINE (AUTO)';
-        badge.style.background = 'rgba(16, 185, 129, 0.2)';
+        badge.textContent = 'DÒ LINE (AUTO ON)';
+        badge.style.background = 'rgba(16, 185, 129, 0.25)';
         badge.style.color = '#34d399';
-        badge.style.border = 'none';
-        document.getElementById('currentCaseDisplay').textContent = 'Đang bám line...';
-      } else if (raw.includes('MODE: CHUYEN SANG LAI TAY') || raw.includes('MOTOR: STOP')) {
+      } else if (raw.includes('LAI TAY') || raw.includes('MOTOR: STOP')) {
         isRobotInAutoMode = false;
         const badge = document.getElementById('pidModeBadge');
         badge.textContent = 'LÁI TAY (MANUAL)';
         badge.style.background = 'rgba(148, 163, 184, 0.2)';
         badge.style.color = '#94a3b8';
-        badge.style.border = 'none';
-        document.getElementById('currentCaseDisplay').textContent = 'Dừng xe';
+        document.getElementById('hudSpeedLeft').textContent = '0';
+        document.getElementById('hudSpeedRight').textContent = '0';
       }
 
-      // 7. Nhận phản hồi thông số PID từ ESP32: "PID: Kp=1.45 Ki=0.00 Kd=3.90 Base=105"
+      // 5. Nhận giá trị PID phản hồi từ ESP32
       if (raw.includes('PID:') || raw.includes('PID SET:')) {
         const kpMatch = raw.match(/Kp=([\d\.]+)/i);
         const kdMatch = raw.match(/Kd=([\d\.]+)/i);
         const baseMatch = raw.match(/(?:Base|baseSpeed)=(\d+)/i);
-        if (kpMatch && document.getElementById('inputKp')) document.getElementById('inputKp').value = kpMatch[1];
-        if (kdMatch && document.getElementById('inputKd')) document.getElementById('inputKd').value = kdMatch[1];
-        if (baseMatch && document.getElementById('inputBase')) document.getElementById('inputBase').value = baseMatch[1];
+        if (kpMatch) document.getElementById('inputKp').value = kpMatch[1];
+        if (kdMatch) document.getElementById('inputKd').value = kdMatch[1];
+        if (baseMatch) document.getElementById('inputBase').value = baseMatch[1];
       }
     }
 
     function updateSensorLeds(binaryStr) {
       document.getElementById('sensorBinaryStr').textContent = binaryStr;
+      let activeCount = 0;
+      let sumPos = 0;
       for (let i = 0; i < 16; i++) {
         const led = document.getElementById(`led_${i}`);
         if (!led) continue;
         const isBlack = binaryStr[i] === '1';
         if (isBlack) {
-          led.classList.add('black');
+          led.classList.add('active');
           led.textContent = '1';
+          activeCount++;
+          sumPos += (i - 7.5);
         } else {
-          led.classList.remove('black');
+          led.classList.remove('active');
           led.textContent = '0';
         }
       }
-    }
 
-    // =================== TỐC ĐỘ (SPEED) ===================
-    let speedDebounce = null;
-    function updateSpeed(val) {
-      document.getElementById('speedDisplay').textContent = `${val} / 255`;
-      clearTimeout(speedDebounce);
-      speedDebounce = setTimeout(() => {
-        sendCommand(`V:${val}`);
-      }, 150);
-    }
-
-    function setPresetSpeed(val) {
-      document.getElementById('speedSlider').value = val;
-      updateSpeed(val);
-    }
-
-    // =================== ĐIỀU KHIỂN BẰNG BÀN PHÍM ===================
-    const activeKeys = {};
-    window.addEventListener('keydown', (e) => {
-      if (e.target.tagName === 'INPUT') return; // Không can thiệp khi đang gõ text
-      const key = e.key.toUpperCase();
-      if (activeKeys[key]) return; // Đã bấm giữ, tránh spam
-      activeKeys[key] = true;
-
-      if (key === 'W' || key === 'ARROWUP') {
-        highlightBtn('btnForward', true);
-        sendCommand('F');
-      } else if (key === 'S' || key === 'ARROWDOWN') {
-        highlightBtn('btnBackward', true);
-        sendCommand('B');
-      } else if (key === 'A' || key === 'ARROWLEFT') {
-        highlightBtn('btnLeft', true);
-        sendCommand('L');
-      } else if (key === 'D' || key === 'ARROWRIGHT') {
-        highlightBtn('btnRight', true);
-        sendCommand('R');
-      } else if (key === 'G') {
-        triggerUltraGrip();
-      } else if (key === ' ' || key === 'ESCAPE') {
-        highlightBtn('btnStop', true);
-        sendCommand('S');
-      }
-    });
-
-    window.addEventListener('keyup', (e) => {
-      if (e.target.tagName === 'INPUT') return;
-      const key = e.key.toUpperCase();
-      delete activeKeys[key];
-
-      if (['W', 'S', 'A', 'D', 'ARROWUP', 'ARROWDOWN', 'ARROWLEFT', 'ARROWRIGHT'].includes(key)) {
-        highlightBtn('btnForward', false);
-        highlightBtn('btnBackward', false);
-        highlightBtn('btnLeft', false);
-        highlightBtn('btnRight', false);
-        highlightBtn('btnStop', false);
-        sendCommand('S'); // Tự động dừng khi nhả phím để an toàn
-      }
-    });
-
-    function highlightBtn(id, active) {
-      const btn = document.getElementById(id);
-      if (btn) {
-        if (active) btn.classList.add('active');
-        else btn.classList.remove('active');
+      if (activeCount > 0) {
+        const avg = sumPos / activeCount; // -7.5 đến +7.5
+        const pct = Math.max(0, Math.min(100, ((avg + 7.5) / 15) * 100));
+        const pointer = document.getElementById('centroidPointer');
+        if (pointer) pointer.style.left = `${pct}%`;
       }
     }
 
-    // =================== TỰ ĐỘNG QUÉT MẮT CẢM BIẾN (AUTO POLL - CHỐNG NGHẼN BLE) ===================
-    function startAutoPoll() {
-      if (!autoPollActive) return;
-      stopAutoPoll();
-      autoPollInterval = setInterval(() => {
-        // Chỉ gửi lệnh 'P' khi đang lái tay (để xem mắt calib) và hàng đợi rảnh
-        // Khi xe đang chạy Auto, ESP32 đã tự gửi telemetry PWM/Case nên không spam 'P' để tránh nghẽn BLE
-        if (isConnected && !isRobotInAutoMode && commandQueue.length === 0) {
-          sendCommand('P');
+    // =================== STEPPER TUNER (+ / -) ===================
+    function stepValue(inputId, delta, minVal, maxVal, decimals = 0) {
+      vibrate(20);
+      const el = document.getElementById(inputId);
+      let val = parseFloat(el.value) || 0;
+      val = Math.max(minVal, Math.min(maxVal, val + delta));
+      el.value = decimals > 0 ? val.toFixed(decimals) : Math.round(val);
+      
+      // Tự động gửi ngay lệnh đơn lẻ tương ứng
+      if (inputId === 'inputKp') sendCommand(`KP:${el.value}`);
+      else if (inputId === 'inputKd') sendCommand(`KD:${el.value}`);
+      else if (inputId === 'inputBase') sendCommand(`BASE:${el.value}`);
+    }
+
+    function applyCustomPid() {
+      vibrate(30);
+      const kp = parseFloat(document.getElementById('inputKp').value);
+      const kd = parseFloat(document.getElementById('inputKd').value);
+      const base = parseInt(document.getElementById('inputBase').value);
+      if (!isNaN(kp)) sendCommand(`KP:${kp.toFixed(2)}`);
+      if (!isNaN(kd)) sendCommand(`KD:${kd.toFixed(2)}`);
+      if (!isNaN(base)) sendCommand(`BASE:${base}`);
+      log(`Đã gửi cấu hình PID: Base=${base}, Kp=${kp}, Kd=${kd}`, 'tx');
+    }
+
+    // =================== CHỌN PROFILE CÀI SẴN ===================
+    function triggerUltraGrip() {
+      vibrate(40);
+      selectProfile('GRIP');
+      setTimeout(() => startAutoMode(), 120);
+    }
+
+    function selectProfile(type) {
+      vibrate(25);
+      ['chipGrip', 'chip3S', 'chip2S', 'chipRace'].forEach(id => {
+        document.getElementById(id).classList.remove('active');
+      });
+
+      const label = document.getElementById('activeProfileLabel');
+
+      if (type === 'GRIP') {
+        document.getElementById('chipGrip').classList.add('active');
+        label.textContent = '🔥 Siêu Bám (125)';
+        document.getElementById('inputBase').value = '125';
+        document.getElementById('inputKp').value = '1.65';
+        document.getElementById('inputKd').value = '3.20';
+      } else if (type === '3S') {
+        document.getElementById('chip3S').classList.add('active');
+        label.textContent = '🛡️ Đầm Chắc (110)';
+        document.getElementById('inputBase').value = '110';
+        document.getElementById('inputKp').value = '1.70';
+        document.getElementById('inputKd').value = '3.60';
+      } else if (type === '2S') {
+        document.getElementById('chip2S').classList.add('active');
+        label.textContent = '⚡ Tốc Độ (135)';
+        document.getElementById('inputBase').value = '135';
+        document.getElementById('inputKp').value = '1.95';
+        document.getElementById('inputKd').value = '4.20';
+      } else if (type === 'RACE') {
+        document.getElementById('chipRace').classList.add('active');
+        label.textContent = '🏁 Đua Max (150)';
+        document.getElementById('inputBase').value = '150';
+        document.getElementById('inputKp').value = '2.10';
+        document.getElementById('inputKd').value = '4.60';
+      }
+
+      applyCustomPid();
+    }
+
+    // =================== LIA HIỆU CHUẨN CẢM BIẾN (CALIB WIZARD) ===================
+    let calibTimer = null;
+    function startSweepCalibration() {
+      vibrate(40);
+      sendCommand('C');
+      const badge = document.getElementById('calibStatusBadge');
+      badge.textContent = 'Đang Lia (4s)...';
+      badge.style.background = 'rgba(0, 242, 254, 0.2)';
+      badge.style.color = 'var(--cyan)';
+
+      const bar = document.getElementById('calibProgressBar');
+      const fill = document.getElementById('calibProgressFill');
+      bar.style.display = 'block';
+      fill.style.width = '0%';
+
+      let elapsed = 0;
+      clearInterval(calibTimer);
+      calibTimer = setInterval(() => {
+        elapsed += 100;
+        const pct = Math.min(100, (elapsed / 4000) * 100);
+        fill.style.width = `${pct}%`;
+        if (elapsed >= 4000) {
+          clearInterval(calibTimer);
+          bar.style.display = 'none';
         }
-      }, 500); // Giãn nhịp từ 200ms lên 500ms giúp Bluetooth hoạt động cực kỳ mượt và không bao giờ rớt kết nối
+      }, 100);
     }
 
-    function stopAutoPoll() {
-      if (autoPollInterval) {
-        clearInterval(autoPollInterval);
-        autoPollInterval = null;
-      }
+    // =================== NÚT BOTTOM ACTION BAR ===================
+    function startAutoMode() {
+      vibrate(50);
+      sendCommand('A');
     }
 
-    function toggleAutoPoll() {
-      autoPollActive = !autoPollActive;
-      const btn = document.getElementById('btnAutoPoll');
-      if (autoPollActive) {
-        btn.textContent = '⚡ Tự động quét: BẬT';
-        btn.style.color = 'var(--accent-cyan)';
-        startAutoPoll();
-      } else {
-        btn.textContent = '⚡ Tự động quét: TẮT';
-        btn.style.color = 'var(--text-muted)';
-        stopAutoPoll();
-      }
+    function stopEmergency() {
+      vibrate(80);
+      sendCommand('S');
+      sendCommand('M');
     }
 
     function sendCustomCommand() {
@@ -1570,68 +1653,49 @@
       }
     }
 
-    // =================== CÁC HÀM XỬ LÝ SIÊU BÁM & PID ===================
-    function triggerUltraGrip() {
-      setActiveProfileChip('chipGrip', '🔥 Siêu Bám (125)');
-      document.getElementById('inputKp').value = '1.65';
-      document.getElementById('inputKd').value = '3.20';
-      document.getElementById('inputBase').value = '125';
-      
-      applyCustomPid();
-      setTimeout(() => sendCommand('A'), 150); // Bật auto chạy ngay sau khi nạp PID
-      
-      const badge = document.getElementById('pidModeBadge');
-      badge.textContent = 'SIÊU BÁM (AUTO ON)';
-      badge.style.background = 'linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(239, 68, 68, 0.3))';
-      badge.style.color = '#fbbf24';
-      badge.style.border = '1px solid #f59e0b';
-      log('Đã nạp Profile Siêu Bám Chống Văng (Base: 125, Kp: 1.65, Kd: 3.20) & BẬT AUTO CHẠY NGAY!', 'rx');
+    // =================== AUTO POLL SENSORS ===================
+    function startAutoPoll() {
+      stopAutoPoll();
+      autoPollInterval = setInterval(() => {
+        if (isConnected && !isRobotInAutoMode && commandQueue.length === 0) {
+          sendCommand('P');
+        }
+      }, 500);
     }
 
-    function selectProfile(type) {
-      if (type === 'GRIP') {
-        triggerUltraGrip();
-      } else if (type === '3S') {
-        setActiveProfileChip('chip3S', '🛡️ Đầm Chắc (110)');
-        document.getElementById('inputKp').value = '1.70';
-        document.getElementById('inputKd').value = '3.60';
-        document.getElementById('inputBase').value = '110';
-        applyCustomPid();
-      } else if (type === '2S') {
-        setActiveProfileChip('chip2S', '⚡ Tốc Độ (135)');
-        document.getElementById('inputKp').value = '1.95';
-        document.getElementById('inputKd').value = '4.20';
-        document.getElementById('inputBase').value = '135';
-        applyCustomPid();
-      } else if (type === 'RACE') {
-        setActiveProfileChip('chipRace', '🏁 Đua Max (150)');
-        document.getElementById('inputKp').value = '2.10';
-        document.getElementById('inputKd').value = '4.60';
-        document.getElementById('inputBase').value = '150';
-        applyCustomPid();
+    function stopAutoPoll() {
+      if (autoPollInterval) {
+        clearInterval(autoPollInterval);
+        autoPollInterval = null;
       }
     }
 
-    function setActiveProfileChip(chipId, labelText) {
-      ['chipGrip', 'chip3S', 'chip2S', 'chipRace'].forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.remove('active');
-      });
-      const activeEl = document.getElementById(chipId);
-      if (activeEl) activeEl.classList.add('active');
-      const label = document.getElementById('activeProfileLabel');
-      if (label) label.textContent = labelText;
-    }
+    // =================== ĐIỀU KHIỂN BẰNG BÀN PHÍM ===================
+    const activeKeys = {};
+    window.addEventListener('keydown', (e) => {
+      if (e.target.tagName === 'INPUT') return;
+      const key = e.key.toUpperCase();
+      if (activeKeys[key]) return;
+      activeKeys[key] = true;
 
-    function applyCustomPid() {
-      const kp = parseFloat(document.getElementById('inputKp').value);
-      const kd = parseFloat(document.getElementById('inputKd').value);
-      const base = parseInt(document.getElementById('inputBase').value);
-      if (!isNaN(kp)) sendCommand(`KP:${kp.toFixed(2)}`);
-      if (!isNaN(kd)) sendCommand(`KD:${kd.toFixed(2)}`);
-      if (!isNaN(base)) sendCommand(`BASE:${base}`);
-      log(`Gửi cấu hình PID mới: Kp=${kp}, Kd=${kd}, Base=${base}`, 'tx');
-    }
+      if (key === 'W' || key === 'ARROWUP') sendCommand('F');
+      else if (key === 'S' || key === 'ARROWDOWN') sendCommand('B');
+      else if (key === 'A' || key === 'ARROWLEFT') sendCommand('L');
+      else if (key === 'D' || key === 'ARROWRIGHT') sendCommand('R');
+      else if (key === 'G') triggerUltraGrip();
+      else if (key === ' ' || key === 'ESCAPE') stopEmergency();
+      else if (key === 'C') startSweepCalibration();
+      else if (key === 'K') sendCommand('K');
+    });
+
+    window.addEventListener('keyup', (e) => {
+      if (e.target.tagName === 'INPUT') return;
+      const key = e.key.toUpperCase();
+      delete activeKeys[key];
+      if (['W', 'S', 'A', 'D', 'ARROWUP', 'ARROWDOWN', 'ARROWLEFT', 'ARROWRIGHT'].includes(key)) {
+        sendCommand('S');
+      }
+    });
   </script>
 </body>
 
