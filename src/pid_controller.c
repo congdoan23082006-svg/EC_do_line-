@@ -21,14 +21,14 @@ static const float SENSOR_WEIGHTS[N_SENSORS] = {
 };
 
 // Cấu hình PID Tối Ưu Cho Bo Mạch Cánh Én & Cần Dài 9cm:
-// Kp=1.35, Ki=0.0, Kd=2.80, baseSpeed=125, minSpeed=20, maxSpeed=220
+// Kp=1.35, Ki=0.0, Kd=2.80, baseSpeed=125, minSpeed=-60, maxSpeed=220
 static PID_Config_t pidConfig = {
     .Kp = 1.35f,
     .Ki = 0.0f,
     .Kd = 2.80f,
     .baseSpeed = 125,
     .maxSpeed = 220,
-    .minSpeed = 20    // Bánh trong luôn giữ tốc độ lăn tiến >= 20, xe uốn cua êm ru không khựng xoay
+    .minSpeed = -60   // Cho phép bánh trong đảo chiều nhẹ (-55 PWM) khi gặp cua vuông 90° thật sự
 };
 
 static bool autoMode = false;
@@ -56,6 +56,7 @@ void pid_init(float kp, float ki, float kd, int16_t baseSpeed) {
     pidConfig.Ki = ki;
     pidConfig.Kd = kd;
     pidConfig.baseSpeed = baseSpeed;
+    pidConfig.minSpeed = -60;
     lastError = 0.0f;
     integralError = 0.0f;
     smoothedDTerm = 0.0f;
@@ -156,10 +157,12 @@ LineCase_t pid_detect_case(float position, uint8_t blackCount) {
     uint8_t rightWingCount = __builtin_popcount(mask & 0b1111000000000000);
     uint8_t totalBlack     = leftWingCount + centerCount + rightWingCount;
 
-    // 1. VẠCH NGANG / NGÃ TƯ / CHỮ T (Phù hợp 100% với bo mạch Cánh Én):
-    // Khi lướt qua vạch ngang: hoặc cụm 8 mắt giữa đen đậm (>=5),
-    // hoặc cả 2 cánh ngoài cùng đen (leftWing >= 2 && rightWing >= 2), hoặc tổng số mắt đen >= 8
-    if (centerCount >= 5 || (leftWingCount >= 2 && rightWingCount >= 2) || totalBlack >= 8) {
+    // 1. VẠCH NGANG / NGÃ TƯ (Chỉ nhận khi vạch cắt ngang TOÀN BỘ thân xe):
+    // Phải có CẢ cánh trái, cụm giữa VÀ cánh phải cùng thấy vạch đen!
+    // Hoặc từ 12 mắt đen trở lên cùng lúc.
+    // LƯU Ý SỐNG CÒN: Góc 90° chỉ có 1 cánh đen (cánh kia trắng tinh). Nếu chỉ có 1 cánh đen,
+    // TUYỆT ĐỐI KHÔNG ĐƯỢC coi là ngã tư, mà phải để hệ thống rẽ 90°!
+    if ((leftWingCount >= 2 && rightWingCount >= 2 && centerCount >= 2) || totalBlack >= 12) {
         return LINE_CASE_CROSS_LINE;
     }
 
@@ -177,7 +180,7 @@ LineCase_t pid_detect_case(float position, uint8_t blackCount) {
             return LINE_CASE_DASHED_LINE;
         }
 
-        // Mất line -> Kích hoạt tìm lại line êm ái
+        // Mất line -> Kích hoạt tìm lại line dứt khoát
         return LINE_CASE_LOST_LINE;
     }
 
@@ -185,7 +188,7 @@ LineCase_t pid_detect_case(float position, uint8_t blackCount) {
     isLineCurrentlyLost = false;
 
     // 3. TOÀN BỘ CÁC TRƯỜNG HỢP CÒN LẠI (Đường thẳng, cua nhẹ, cua chữ S, cua 90 độ):
-    // -> ĐỀU ĐƯỢC ĐIỀU KHIỂN BẰNG THUẬT TOÁN PID DÒNG CHẢY LIÊN TỤC VỚI HỆ THỐNG TRỌNG SỐ CÁNH ÉN!
+    // -> ĐỀU ĐƯỢC ĐIỀU KHIỂN BẰNG THUẬT TOÁN PID DÒNG CHẢY HÌNH HỌC CÁNH ÉN!
     return LINE_CASE_NORMAL_PID;
 }
 
@@ -223,7 +226,7 @@ void pid_line_follow_step(void) {
             // - Khi tràn sang 4 mắt cánh én (|error| > 35.0): Tự động mớm thêm lực cua dứt khoát bo góc 90°.
             float pTerm = pidConfig.Kp * error;
             if (absErr > 35.0f) {
-                float extra = (absErr - 35.0f) * 0.45f;
+                float extra = (absErr - 35.0f) * 0.55f;
                 pTerm += (error > 0.0f) ? extra : -extra;
             }
 
@@ -242,23 +245,27 @@ void pid_line_follow_step(void) {
             // Tổng bù lái vi sai
             lastCorrection = pTerm + iTerm + dTerm;
 
-            // 4. Giảm ga ôm cua thích ứng cánh én (Tối đa giảm 25 PWM ở góc cua cực đại 128.0 để ghìm trớn):
+            // 4. Giảm ga ôm cua thích ứng cánh én:
             float dragFactor = absErr / 128.0f;
             if (dragFactor > 1.0f) dragFactor = 1.0f;
-            int16_t currentBase = pidConfig.baseSpeed - (int16_t)(dragFactor * 25.0f);
+            int16_t currentBase = pidConfig.baseSpeed - (int16_t)(dragFactor * 35.0f);
 
             int16_t leftSpeed  = currentBase + (int16_t)lastCorrection;
             int16_t rightSpeed = currentBase - (int16_t)lastCorrection;
 
             // 5. Thuật toán vi sai bám sàn cánh én:
-            // - Khi cua thường (|error| <= 70): Bánh trong luôn giữ minSpeed = 20, cả hai bánh cùng lăn tiến êm ru.
-            // - Khi cua vuông 90° gắt chạm cánh ngoài (|error| > 70): Bánh trong tự động thu hẹp về 5-10 PWM
-            //   để làm tâm xoay hẹp (pivot tightening), giúp đầu xe 9cm uốn trọn góc cua mà không văng sàn!
-            int16_t dynamicMin = pidConfig.minSpeed;
+            // - Khi đi thẳng & cua nhẹ (|error| <= 40): dynamicMin = 20 (bánh trong luôn lăn tiến, êm ru tuyệt đối).
+            // - Khi cua vừa (40 < |error| <= 70): dynamicMin giảm mượt từ 20 -> 0 (thả trôi ôm cua).
+            // - Khi cua vuông 90° gắt (|error| > 70): dynamicMin cho phép đảo chiều nhẹ (-55 PWM)
+            //   tạo tâm quay vi sai dứt khoát đưa đầu xe 9cm bẻ góc 90° trong 0.1s!
+            int16_t dynamicMin = 20;
             if (absErr > 70.0f) {
-                float wingTight = (absErr - 70.0f) / 58.0f;
-                if (wingTight > 1.0f) wingTight = 1.0f;
-                dynamicMin = (int16_t)(pidConfig.minSpeed - (wingTight * 15.0f)); // 20 -> 5
+                float wingFactor = (absErr - 70.0f) / 58.0f; // 0.0 -> 1.0
+                if (wingFactor > 1.0f) wingFactor = 1.0f;
+                dynamicMin = -(int16_t)(wingFactor * 55.0f); // 0 -> -55 PWM
+            } else if (absErr > 40.0f) {
+                float midFactor = (absErr - 40.0f) / 30.0f; // 0.0 -> 1.0
+                dynamicMin = (int16_t)(20.0f - midFactor * 20.0f); // 20 -> 0 PWM
             }
 
             leftSpeed  = clamp_val(leftSpeed, dynamicMin, pidConfig.maxSpeed);
@@ -269,7 +276,7 @@ void pid_line_follow_step(void) {
         }
 
         // ---------------------------------------------------------------------
-        // CASE 4: MẤT LINE (16 mắt đều trắng) -> Tìm lại line êm ái theo cánh én
+        // CASE 4: MẤT LINE (16 mắt đều trắng) -> Tìm lại line dứt khoát
         // ---------------------------------------------------------------------
         case LINE_CASE_LOST_LINE: {
             unsigned long lostElapsed = millis() - lostLineStartTime;
@@ -280,19 +287,19 @@ void pid_line_follow_step(void) {
                 break;
             }
 
-            // Xe lăn bánh êm ái hướng đầu xe về phía cánh én vừa thấy vạch cuối cùng
+            // Xe quay đầu dứt khoát về phía cánh én vừa thấy vạch cuối cùng
             if (lastKnownDirection < 0) {
-                motor_set_speeds(15, 120); // Bánh trái lăn nhẹ, bánh phải đẩy xe về lại vạch
+                motor_set_speeds(-50, 140); // Bánh trái quay lùi nhẹ, bánh phải đẩy tới bẻ đầu xe về vạch
             } else if (lastKnownDirection > 0) {
-                motor_set_speeds(120, 15); // Bánh phải lăn nhẹ, bánh trái đẩy xe về lại vạch
+                motor_set_speeds(140, -50); // Bánh phải quay lùi nhẹ, bánh trái đẩy tới bẻ đầu xe về vạch
             } else {
-                motor_set_speeds(70, 70);
+                motor_set_speeds(50, 50);
             }
             break;
         }
 
         // ---------------------------------------------------------------------
-        // CASE 5: VẠCH NGANG / NGÃ TƯ / CHỮ T
+        // CASE 5: VẠCH NGANG / NGÃ TƯ
         // ---------------------------------------------------------------------
         case LINE_CASE_CROSS_LINE: {
             // Giữ hướng chạy thẳng lướt qua giao lộ với tốc độ cơ bản
@@ -330,7 +337,7 @@ const char* pid_get_case_name(LineCase_t c) {
         case LINE_CASE_SHARP_LEFT: return "CASE 2: Cua Gat Trai (90 deg)";
         case LINE_CASE_SHARP_RIGHT: return "CASE 3: Cua Gat Phai (90 deg)";
         case LINE_CASE_LOST_LINE: return "CASE 4: Mat Line (Tim Lai)";
-        case LINE_CASE_CROSS_LINE: return "CASE 5: Vach Ngang / Chu T";
+        case LINE_CASE_CROSS_LINE: return "CASE 5: Vach Ngang / Nga Tu";
         case LINE_CASE_T_LEFT: return "CASE 6: Nga 3 Trai";
         case LINE_CASE_T_RIGHT: return "CASE 7: Nga 3 Phai";
         case LINE_CASE_STOPPED: return "CASE 8: Dung Xe";

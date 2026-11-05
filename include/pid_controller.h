@@ -33,7 +33,7 @@ typedef struct {
   float Kd;
   int16_t baseSpeed; // Tốc độ chuẩn (ví dụ 160)
   int16_t maxSpeed;  // Tốc độ tối đa (255)
-  int16_t minSpeed;  // Tốc độ tối thiểu (>= 20 để bánh trong luôn lăn tiến êm ru, không khựng xoay)
+  int16_t minSpeed;  // Tốc độ tối thiểu (-60 để bánh trong đảo chiều nhẹ khi bẻ góc 90°)
 } PID_Config_t;
 
 // =================== CÁC HÀM KHỞI TẠO & CÀI ĐẶT ===================
