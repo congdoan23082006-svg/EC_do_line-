@@ -17,7 +17,7 @@ extern "C" {
 #define IN_R2                 13    // Động cơ phải - chiều 2
 
 // =================== CẤU HÌNH PWM LEDC ===================
-#define MOTOR_PWM_FREQ        1000    // Tần số PWM 1000 Hz chuẩn cho driver động cơ (êm, lực kéo khỏe, không trượt xung)
+#define MOTOR_PWM_FREQ        2000    // Tần số PWM 2000 Hz chuẩn cho driver động cơ (êm, lực kéo khỏe, không trượt xung)
 #define MOTOR_PWM_RESOLUTION  8       // Độ phân giải PWM 8-bit (0 - 255)
 
 #define CH_L1                 0       // Kênh LEDC cho IN_L1
