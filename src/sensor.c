@@ -111,7 +111,7 @@ void sensor_update_calibration_loop(void) {
 // Chốt kết thúc quá trình lia và tính ngưỡng trung bình (Min + Max) / 2
 void sensor_finish_sweep_calibration(void) {
     isCalibrating = false;
-    bool valid = true;
+    uint8_t passedSensors = 0;
 
     printf("\n=== KET QUA HIEU CHUAN (LIA CAM BIEN QUA LAI) ===\n");
     printf("Mat  |  Min ADC  |  Max ADC  | Delta ADC | Nguong TB\n");
@@ -123,25 +123,26 @@ void sensor_finish_sweep_calibration(void) {
         if (diff < MIN_CALIBRATION_DELTA) {
             printf(" %2d  |   %4u    |   %4u    |   %4u    | CHUA QUA VACH!\n",
                    i, minValues[i], maxValues[i], diff);
-            valid = false;
+            thresholds[i] = 2048;
             continue;
         }
 
-        // Tính ngưỡng trung bình của từng mắt
+        // Tính ngưỡng trung bình của từng mắt (giữ nguyên cực tính polarity đã chọn)
         thresholds[i] = (minValues[i] + maxValues[i]) / 2;
-        blackIsHigher[i] = true; // Giá trị cao hơn ngưỡng là vạch đen
+        passedSensors++;
 
         printf(" %2d  |   %4u    |   %4u    |   %4u    |   %4u (OK)\n",
                i, minValues[i], maxValues[i], diff, thresholds[i]);
     }
     printf("--------------------------------------------------\n");
 
-
-    if (valid) {
+    // Chỉ cần ít nhất 6 mắt (cụm bám tâm) đã quét qua vạch là hệ thống sẵn sàng hoạt động
+    if (passedSensors >= 6) {
         calibrationReady = true;
-        printf("[CALIB THANH CONG] Da tinh xong nguong trung binh tung mat! (0 = Trang, 1 = Den)\n\n");
+        printf("[CALIB THANH CONG] Da tinh nguong cho %u/16 mat! (0 = Trang, 1 = Den)\n\n", passedSensors);
     } else {
-        printf("[CALIB CHUA DAT] Mot so mat chua lia qua vach den. Hay bam CALIB va lia lai!\n\n");
+        calibrationReady = false;
+        printf("[CALIB CHUA DAT] Chi co %u/16 mat qua vach. Hay bam CALIB va lia rong tay hon!\n\n", passedSensors);
     }
 }
 

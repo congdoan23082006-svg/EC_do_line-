@@ -261,7 +261,7 @@
     /* ================= HUD LIVE MONITOR ================= */
     .hud-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(95px, 1fr));
       gap: 10px;
     }
 
@@ -651,7 +651,7 @@
 
     .calib-actions-row {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(95px, 1fr));
       gap: 8px;
     }
 
@@ -812,7 +812,7 @@
     @media (max-width: 600px) {
       body { padding-bottom: 85px; }
       .brand-info p { display: none; }
-      .hud-grid { grid-template-columns: repeat(3, 1fr); }
+      .hud-grid { grid-template-columns: repeat(auto-fit, minmax(95px, 1fr)); }
       .profile-chips-grid { grid-template-columns: repeat(2, 1fr); }
       .sensor-led-pill { height: 42px; font-size: 9px; }
       .btn-main-action { height: 48px; font-size: 14px; }
@@ -1015,9 +1015,9 @@
 
         <div class="sensor-visualizer-box">
           <div style="display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted);">
-            <span>Mắt 0 (Trái ngoài)</span>
+            <span>Mắt 15 (Cánh Trái)</span>
             <span id="sensorBinaryStr" style="font-family: 'JetBrains Mono', monospace; color: var(--cyan); font-weight: 700;">0000000000000000</span>
-            <span>Mắt 15 (Phải ngoài)</span>
+            <span>Mắt 0 (Cánh Phải)</span>
           </div>
 
           <!-- 16 MẮT LED -->
@@ -1063,6 +1063,9 @@
           </button>
           <button class="btn-action-outline" onclick="sendCommand('INV')">
             🔄 Đảo Cực (INV)
+          </button>
+          <button class="btn-action-outline" onclick="sendCommand('REV')" style="border-color: rgba(245, 158, 11, 0.4); color: #fbbf24;">
+            🔁 Đảo Lái (REV)
           </button>
           <button class="btn-action-outline" onclick="sendCommand('P')">
             📊 Đọc Mắt (P)
@@ -1168,9 +1171,9 @@
     let reconnectAttempts = 0;
     const MAX_RECONNECT_ATTEMPTS = 5;
 
-    // Sinh 16 mắt cảm biến trực quan
+    // Sinh 16 mắt cảm biến trực quan: Mắt 15 (Trái ngoài) -> Mắt 0 (Phải ngoài)
     const sensorGrid16 = document.getElementById('sensorGrid16');
-    for (let i = 0; i < 16; i++) {
+    for (let i = 15; i >= 0; i--) {
       const cell = document.createElement('div');
       cell.className = 'sensor-cell';
       cell.innerHTML = `
@@ -1528,7 +1531,14 @@
       }
 
       if (activeCount > 0) {
-        const avg = sumPos / activeCount; // -7.5 đến +7.5
+        // Mắt 15 là Trái (pos = -7.5), Mắt 0 là Phải (pos = +7.5)
+        let sumWingPos = 0;
+        for (let i = 0; i < 16; i++) {
+          if (binaryStr[i] === '1') {
+            sumWingPos += (7.5 - i); // 15 -> -7.5 (Trái), 0 -> +7.5 (Phải)
+          }
+        }
+        const avg = sumWingPos / activeCount;
         const pct = Math.max(0, Math.min(100, ((avg + 7.5) / 15) * 100));
         const pointer = document.getElementById('centroidPointer');
         if (pointer) pointer.style.left = `${pct}%`;

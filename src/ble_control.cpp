@@ -222,6 +222,16 @@ static void processBleCommand(const std::string& rxValue) {
         return;
     }
 
+    // Đảo chiều lái vi sai (dùng khi động cơ hoặc cánh cảm biến bị ngược hướng): "REV" hoặc "DIR"
+    if (cmd == "REV" || cmd == "DIR" || cmd == "REVERSE_STEER" || cmd == "DAO_LAI") {
+        bool cur = pid_get_steer_reverse();
+        pid_set_steer_reverse(!cur);
+        char msg[64];
+        snprintf(msg, sizeof(msg), "STEER: %s\n", !cur ? "REVERSED" : "NORMAL");
+        ble_send_string(msg);
+        return;
+    }
+
     // Tốc độ phím nhanh 0..9 (từ các ứng dụng RC Car)
     if (cmd.length() == 1 && cmd[0] >= '0' && cmd[0] <= '9') {
         int level = cmd[0] - '0';

@@ -44,6 +44,16 @@ typedef struct {
 void pid_init(float kp, float ki, float kd, int16_t baseSpeed);
 
 /**
+ * @brief Cài đặt đảo chiều lái vi sai (dùng khi phần cứng bị ngược chiều)
+ */
+void pid_set_steer_reverse(bool reverse);
+
+/**
+ * @brief Lấy trạng thái đảo chiều lái
+ */
+bool pid_get_steer_reverse(void);
+
+/**
  * @brief Cập nhật hệ số Kp, Ki, Kd
  */
 void pid_set_tunings(float kp, float ki, float kd);

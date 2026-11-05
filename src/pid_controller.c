@@ -14,10 +14,10 @@
 //   trọng số mở rộng lũy tiến (-128..-62 và +62..+128) để bẻ góc dứt khoát khi ôm cua 90°
 // =============================================================================
 static const float SENSOR_WEIGHTS[N_SENSORS] = {
-    -128.0f, -104.0f, -82.0f, -62.0f, // 4 mắt Cánh Trái (0, 1, 2, 3) - vát chéo dốc sau
-     -44.0f,  -30.0f, -18.0f,  -6.0f, // 4 mắt Nửa Trái hàng thẳng (4, 5, 6, 7)
-       6.0f,   18.0f,  30.0f,  44.0f, // 4 mắt Nửa Phải hàng thẳng (8, 9, 10, 11)
-      62.0f,   82.0f, 104.0f, 128.0f  // 4 mắt Cánh Phải (12, 13, 14, 15) - vát chéo dốc sau
+     128.0f,  104.0f,   82.0f,   62.0f, // 4 mắt Cánh Phải (0, 1, 2, 3) - ngoài cùng -> trong
+      44.0f,   30.0f,   18.0f,    6.0f, // 4 mắt Nửa Phải hàng thẳng (4, 5, 6, 7)
+      -6.0f,  -18.0f,  -30.0f,  -44.0f, // 4 mắt Nửa Trái hàng thẳng (8, 9, 10, 11)
+     -62.0f,  -82.0f, -104.0f, -128.0f  // 4 mắt Cánh Trái (12, 13, 14, 15) - trong -> ngoài cùng
 };
 
 // Cấu hình PID Tối Ưu Cho Bo Mạch Cánh Én & Cần Dài 9cm:
@@ -32,6 +32,7 @@ static PID_Config_t pidConfig = {
 };
 
 static bool autoMode = false;
+static bool steerReverse = false;
 static LineCase_t currentCase = LINE_CASE_STOPPED;
 static float lastError = 0.0f;
 static float integralError = 0.0f;
@@ -49,6 +50,14 @@ static inline int16_t clamp_val(int16_t v, int16_t min_v, int16_t max_v) {
     if (v < min_v) return min_v;
     if (v > max_v) return max_v;
     return v;
+}
+
+void pid_set_steer_reverse(bool reverse) {
+    steerReverse = reverse;
+}
+
+bool pid_get_steer_reverse(void) {
+    return steerReverse;
 }
 
 void pid_init(float kp, float ki, float kd, int16_t baseSpeed) {
@@ -152,9 +161,12 @@ LineCase_t pid_detect_case(float position, uint8_t blackCount) {
     // Cánh trái (mắt 0..3): 0b0000000000001111
     // Giữa thẳng (mắt 4..11): 0b0000111111110000
     // Cánh phải (mắt 12..15): 0b1111000000000000
-    uint8_t leftWingCount  = __builtin_popcount(mask & 0b0000000000001111);
+    // Mắt 0..3: Cánh Phải (0b0000000000001111)
+    // Mắt 4..11: Giữa thẳng (0b0000111111110000)
+    // Mắt 12..15: Cánh Trái (0b1111000000000000)
+    uint8_t rightWingCount = __builtin_popcount(mask & 0b0000000000001111);
     uint8_t centerCount    = __builtin_popcount(mask & 0b0000111111110000);
-    uint8_t rightWingCount = __builtin_popcount(mask & 0b1111000000000000);
+    uint8_t leftWingCount  = __builtin_popcount(mask & 0b1111000000000000);
     uint8_t totalBlack     = leftWingCount + centerCount + rightWingCount;
 
     // 1. VẠCH NGANG / NGÃ TƯ (Chỉ nhận khi vạch cắt ngang TOÀN BỘ thân xe):
@@ -250,6 +262,10 @@ void pid_line_follow_step(void) {
             if (dragFactor > 1.0f) dragFactor = 1.0f;
             int16_t currentBase = pidConfig.baseSpeed - (int16_t)(dragFactor * 35.0f);
 
+            if (steerReverse) {
+                lastCorrection = -lastCorrection;
+            }
+
             int16_t leftSpeed  = currentBase + (int16_t)lastCorrection;
             int16_t rightSpeed = currentBase - (int16_t)lastCorrection;
 
@@ -288,10 +304,13 @@ void pid_line_follow_step(void) {
             }
 
             // Xe quay đầu dứt khoát về phía cánh én vừa thấy vạch cuối cùng
-            if (lastKnownDirection < 0) {
-                motor_set_speeds(-50, 140); // Bánh trái quay lùi nhẹ, bánh phải đẩy tới bẻ đầu xe về vạch
-            } else if (lastKnownDirection > 0) {
-                motor_set_speeds(140, -50); // Bánh phải quay lùi nhẹ, bánh trái đẩy tới bẻ đầu xe về vạch
+            int8_t searchDir = lastKnownDirection;
+            if (steerReverse) searchDir = -searchDir;
+
+            if (searchDir < 0) {
+                motor_set_speeds(-50, 140); // Cánh Trái thấy vạch cuối -> Lái đầu xe rẽ Trái
+            } else if (searchDir > 0) {
+                motor_set_speeds(140, -50); // Cánh Phải thấy vạch cuối -> Lái đầu xe rẽ Phải
             } else {
                 motor_set_speeds(50, 50);
             }
