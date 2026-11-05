@@ -266,8 +266,9 @@ void pid_line_follow_step(void) {
                 lastCorrection = -lastCorrection;
             }
 
-            int16_t leftSpeed  = currentBase + (int16_t)lastCorrection;
-            int16_t rightSpeed = currentBase - (int16_t)lastCorrection;
+            // Logic 2 bánh PID đồng bộ chuẩn xác với điều khiển tay (Left: trừ bù lái, Right: cộng bù lái)
+            int16_t leftSpeed  = currentBase - (int16_t)lastCorrection;
+            int16_t rightSpeed = currentBase + (int16_t)lastCorrection;
 
             // 5. Thuật toán vi sai bám sàn cánh én:
             // - Khi đi thẳng & cua nhẹ (|error| <= 40): dynamicMin = 20 (bánh trong luôn lăn tiến, êm ru tuyệt đối).
@@ -308,9 +309,9 @@ void pid_line_follow_step(void) {
             if (steerReverse) searchDir = -searchDir;
 
             if (searchDir < 0) {
-                motor_set_speeds(-50, 140); // Cánh Trái thấy vạch cuối -> Lái đầu xe rẽ Trái
+                motor_set_speeds(140, -50); // Cánh Trái thấy vạch cuối -> Lái đầu xe bẻ hướng ngược lại theo logic điều khiển
             } else if (searchDir > 0) {
-                motor_set_speeds(140, -50); // Cánh Phải thấy vạch cuối -> Lái đầu xe rẽ Phải
+                motor_set_speeds(-50, 140); // Cánh Phải thấy vạch cuối -> Lái đầu xe bẻ hướng ngược lại theo logic điều khiển
             } else {
                 motor_set_speeds(50, 50);
             }
