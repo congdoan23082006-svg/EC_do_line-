@@ -23,9 +23,9 @@ static const float SENSOR_WEIGHTS[N_SENSORS] = {
 // Cấu hình PID Tối Ưu Cho Bo Mạch Cánh Én & Cần Dài 9cm:
 // Kp=1.35, Ki=0.0, Kd=2.80, baseSpeed=125, minSpeed=-60, maxSpeed=220
 static PID_Config_t pidConfig = {
-    .Kp = 1.35f,
+    .Kp = 1.15f,
     .Ki = 0.0f,
-    .Kd = 2.80f,
+    .Kd = 2.40f,
     .baseSpeed = 125,
     .maxSpeed = 220,
     .minSpeed = -60   // Cho phép bánh trong đảo chiều nhẹ (-55 PWM) khi gặp cua vuông 90° thật sự
@@ -116,10 +116,12 @@ bool pid_calculate_position(float *outPosition, uint8_t *outBlackCount) {
     for (int i = SENSOR_START_IDX; i <= SENSOR_END_IDX; i++) {
         uint16_t cal = sensor_get_calibrated(i);
 
-        // Lọc nhiễu nền: chỉ lấy tín hiệu thực sự có vạch đen (cal >= 150)
-        if (cal >= 150) {
-            sumCalibrated += cal;
-            sumWeights += (float)cal * SENSOR_WEIGHTS[i];
+        // Lọc nhiễu nền thông minh: chỉ lấy tín hiệu thực sự có vạch đen (cal >= 180)
+        // và trừ nền 140 để triệt tiêu hoàn toàn nhiễu phản xạ sàn ở các mắt chóp cánh én
+        if (cal >= 180) {
+            uint32_t eff = cal - 140;
+            sumCalibrated += eff;
+            sumWeights += (float)eff * SENSOR_WEIGHTS[i];
             if (cal >= 500) {
                 count++;
             }
@@ -236,16 +238,24 @@ void pid_line_follow_step(void) {
             // 1. Khâu P thích ứng hình học Cánh Én (Adaptive Progressive P):
             // - Dải 8 mắt giữa (|error| <= 35.0): Lái cực êm, xe chạy thẳng phẳng lì không lắc đầu.
             // - Khi tràn sang 4 mắt cánh én (|error| > 35.0): Tự động mớm thêm lực cua dứt khoát bo góc 90°.
-            float pTerm = pidConfig.Kp * error;
+            // 1. Vùng đệm êm trung tâm (Soft-Core Center Zone):
+            // - Dải bám tâm (|error| <= 18.0): giảm Kp nhẹ xuống 60% để xe chạy thẳng êm ru phẳng lì, không lắc đầu
+            // - Dải cua vừa (18.0 < |error| <= 35.0): Kp đạt 100% để giữ xe bám sát tâm đường cong
+            // - Dải cua gắt cánh én (|error| > 35.0): Mớm thêm lực cua bẻ góc 90°
+            float effectiveKp = pidConfig.Kp;
+            if (absErr <= 18.0f) {
+                effectiveKp = pidConfig.Kp * (0.60f + 0.40f * (absErr / 18.0f));
+            }
+            float pTerm = effectiveKp * error;
             if (absErr > 35.0f) {
-                float extra = (absErr - 35.0f) * 0.55f;
+                float extra = (absErr - 35.0f) * 0.50f;
                 pTerm += (error > 0.0f) ? extra : -extra;
             }
 
-            // 2. Khâu vi phân D lọc thông thấp 70% / 30% dập tắt hoàn toàn rung lắc đòn bẩy 9cm:
+            // 2. Khâu vi phân D lọc thông thấp 85% / 15% dập tắt triệt để rung lắc đòn bẩy 9cm:
             float rawDelta = error - lastError;
             lastError = error;
-            smoothedDTerm = smoothedDTerm * 0.70f + (pidConfig.Kd * rawDelta) * 0.30f;
+            smoothedDTerm = smoothedDTerm * 0.85f + (pidConfig.Kd * rawDelta) * 0.15f;
             float dTerm = smoothedDTerm;
 
             // 3. Khâu tích phân I (Anti-windup: kẹp trong khoảng [-80, 80])
@@ -254,8 +264,18 @@ void pid_line_follow_step(void) {
             if (integralError < -80.0f) integralError = -80.0f;
             float iTerm = pidConfig.Ki * integralError;
 
-            // Tổng bù lái vi sai
-            lastCorrection = pTerm + iTerm + dTerm;
+            // 4. Bộ lọc dập sốc gia tốc lái vi sai (Slew-Rate Limiter):
+            // Giới hạn tốc độ thay đổi bù lái tối đa 4.5 PWM mỗi chu kỳ 5ms,
+            // triệt tiêu hoàn toàn hiện tượng rung giật đổi tốc độ bánh xe đột ngột
+            float rawCorrection = pTerm + iTerm + dTerm;
+            float maxDelta = 4.5f;
+            if (rawCorrection - lastCorrection > maxDelta) {
+                lastCorrection += maxDelta;
+            } else if (rawCorrection - lastCorrection < -maxDelta) {
+                lastCorrection -= maxDelta;
+            } else {
+                lastCorrection = rawCorrection;
+            }
 
             // 4. Giảm ga ôm cua thích ứng cánh én:
             float dragFactor = absErr / 128.0f;
