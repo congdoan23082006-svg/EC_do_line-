@@ -975,7 +975,7 @@
             </div>
             <div class="stepper">
               <button class="btn-step" onclick="stepValue('inputKp', -0.05, 0, 10, 2)">−</button>
-              <input type="number" id="inputKp" class="stepper-input" value="1.65" step="0.05">
+              <input type="number" id="inputKp" class="stepper-input" value="1.35" step="0.05">
               <button class="btn-step" onclick="stepValue('inputKp', 0.05, 0, 10, 2)">+</button>
             </div>
           </div>
@@ -988,7 +988,7 @@
             </div>
             <div class="stepper">
               <button class="btn-step" onclick="stepValue('inputKd', -0.1, 0, 20, 2)">−</button>
-              <input type="number" id="inputKd" class="stepper-input" value="3.20" step="0.1">
+              <input type="number" id="inputKd" class="stepper-input" value="2.80" step="0.1">
               <button class="btn-step" onclick="stepValue('inputKd', 0.1, 0, 20, 2)">+</button>
             </div>
           </div>
@@ -1028,9 +1028,9 @@
           <!-- CON TRỎ VỊ TRÍ TÂM VẠCH LINE -->
           <div style="margin-top: 6px;">
             <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-dim); margin-bottom: 2px;">
-              <span>-75mm (Cực trái)</span>
+              <span>-128mm (Cánh trái)</span>
               <span>0mm (Chính tâm)</span>
-              <span>+75mm (Cực phải)</span>
+              <span>+128mm (Cánh phải)</span>
             </div>
             <div class="centroid-track-container">
               <div class="centroid-center-tick"></div>
@@ -1469,7 +1469,7 @@
           document.getElementById('hudError').textContent = `${errVal > 0 ? '+' : ''}${errVal.toFixed(1)} mm`;
 
           // Cập nhật vị trí con trỏ Centroid (-75 đến +75 quy đổi sang 0% - 100%)
-          const pct = Math.max(0, Math.min(100, ((errVal + 75) / 150) * 100));
+          const pct = Math.max(0, Math.min(100, ((errVal + 128) / 256) * 100));
           const pointer = document.getElementById('centroidPointer');
           if (pointer) pointer.style.left = `${pct}%`;
 
@@ -1579,26 +1579,26 @@
         document.getElementById('chipGrip').classList.add('active');
         label.textContent = '🔥 Siêu Bám (125)';
         document.getElementById('inputBase').value = '125';
-        document.getElementById('inputKp').value = '1.65';
-        document.getElementById('inputKd').value = '3.20';
+        document.getElementById('inputKp').value = '1.35';
+        document.getElementById('inputKd').value = '2.80';
       } else if (type === '3S') {
         document.getElementById('chip3S').classList.add('active');
         label.textContent = '🛡️ Đầm Chắc (110)';
         document.getElementById('inputBase').value = '110';
-        document.getElementById('inputKp').value = '1.70';
-        document.getElementById('inputKd').value = '3.60';
+        document.getElementById('inputKp').value = '1.40';
+        document.getElementById('inputKd').value = '3.10';
       } else if (type === '2S') {
         document.getElementById('chip2S').classList.add('active');
         label.textContent = '⚡ Tốc Độ (135)';
         document.getElementById('inputBase').value = '135';
-        document.getElementById('inputKp').value = '1.95';
-        document.getElementById('inputKd').value = '4.20';
+        document.getElementById('inputKp').value = '1.55';
+        document.getElementById('inputKd').value = '3.40';
       } else if (type === 'RACE') {
         document.getElementById('chipRace').classList.add('active');
         label.textContent = '🏁 Đua Max (150)';
         document.getElementById('inputBase').value = '150';
-        document.getElementById('inputKp').value = '2.10';
-        document.getElementById('inputKd').value = '4.60';
+        document.getElementById('inputKp').value = '1.70';
+        document.getElementById('inputKd').value = '3.80';
       }
 
       applyCustomPid();
@@ -1700,3 +1700,5 @@
 </body>
 
 </html>
+
+

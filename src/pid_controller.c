@@ -7,21 +7,28 @@
 #define SENSOR_START_IDX   0      // Bắt đầu từ mắt 0
 #define SENSOR_END_IDX     15     // Kết thúc ở mắt 15
 
-// Trọng số vị trí đối xứng cho 16 mắt (Tâm vạch ở giữa mắt 7 và 8: từ -75 đến +75)
+// =============================================================================
+// BẢNG TRỌNG SỐ VỊ TRÍ HÌNH HỌC CÁNH ÉN (SWEPT-BACK WING GEOMETRY):
+// - 8 mắt giữa (4..11) thẳng hàng ở mũi trước: khoảng cách tâm hẹp, bám vạch siêu êm
+// - 4 mắt cánh trái (0..3) & 4 mắt cánh phải (12..15) vát chéo dốc lùi về phía sau:
+//   trọng số mở rộng lũy tiến (-128..-62 và +62..+128) để bẻ góc dứt khoát khi ôm cua 90°
+// =============================================================================
 static const float SENSOR_WEIGHTS[N_SENSORS] = {
-    -75.0f, -65.0f, -55.0f, -45.0f, -35.0f, -25.0f, -15.0f, -5.0f, // 8 mắt bên trái (0..7)
-      5.0f,  15.0f,  25.0f,  35.0f,  45.0f,  55.0f,  65.0f,  75.0f  // 8 mắt bên phải (8..15)
+    -128.0f, -104.0f, -82.0f, -62.0f, // 4 mắt Cánh Trái (0, 1, 2, 3) - vát chéo dốc sau
+     -44.0f,  -30.0f, -18.0f,  -6.0f, // 4 mắt Nửa Trái hàng thẳng (4, 5, 6, 7)
+       6.0f,   18.0f,  30.0f,  44.0f, // 4 mắt Nửa Phải hàng thẳng (8, 9, 10, 11)
+      62.0f,   82.0f, 104.0f, 128.0f  // 4 mắt Cánh Phải (12, 13, 14, 15) - vát chéo dốc sau
 };
 
-// Cấu hình PID Dòng Chảy Liên Tục (Êm Ru, Mềm Mại, Không Xoay Khựng Bánh):
-// Kp=1.65, Ki=0.0, Kd=3.20, baseSpeed=125, minSpeed=20, maxSpeed=220
+// Cấu hình PID Tối Ưu Cho Bo Mạch Cánh Én & Cần Dài 9cm:
+// Kp=1.35, Ki=0.0, Kd=2.80, baseSpeed=125, minSpeed=20, maxSpeed=220
 static PID_Config_t pidConfig = {
-    .Kp = 1.65f,
+    .Kp = 1.35f,
     .Ki = 0.0f,
-    .Kd = 3.20f,
+    .Kd = 2.80f,
     .baseSpeed = 125,
     .maxSpeed = 220,
-    .minSpeed = 20    // Bánh trong luôn giữ tốc độ tiến >= 20, cả 2 bánh cùng lăn mượt mà, KHÔNG khựng xoay tại chỗ
+    .minSpeed = 20    // Bánh trong luôn giữ tốc độ lăn tiến >= 20, xe uốn cua êm ru không khựng xoay
 };
 
 static bool autoMode = false;
@@ -29,7 +36,7 @@ static LineCase_t currentCase = LINE_CASE_STOPPED;
 static float lastError = 0.0f;
 static float integralError = 0.0f;
 static float lastCorrection = 0.0f;
-static float smoothedDTerm = 0.0f;  // Bộ lọc Low-Pass làm mượt D-Term chống giật lắc
+static float smoothedDTerm = 0.0f;  // Bộ lọc Low-Pass 70/30 dập chấn động học cánh én
 static unsigned long lastComputeTime = 0;
 static unsigned long lostLineStartTime = 0;
 static bool isLineCurrentlyLost = false;
@@ -118,12 +125,12 @@ bool pid_calculate_position(float *outPosition, uint8_t *outBlackCount) {
 
         // Ghi nhớ vị trí và hướng vạch cuối cùng (Line Memory)
         lastKnownPosition = pos;
-        if (pos < -15.0f) {
-            lastKnownDirection = -1; // Vạch ở bên trái
-        } else if (pos > 15.0f) {
-            lastKnownDirection = 1;  // Vạch ở bên phải
+        if (pos < -20.0f) {
+            lastKnownDirection = -1; // Vạch ở bên trái (cánh trái)
+        } else if (pos > 20.0f) {
+            lastKnownDirection = 1;  // Vạch ở bên phải (cánh phải)
         } else {
-            lastKnownDirection = 0;  // Vạch đang ở chính giữa tâm
+            lastKnownDirection = 0;  // Vạch đang ở cụm giữa thẳng
         }
         return true;
     }
@@ -139,10 +146,20 @@ LineCase_t pid_detect_case(float position, uint8_t blackCount) {
     }
 
     uint16_t mask = sensor_get_line_bits();
-    uint8_t totalBlack = __builtin_popcount(mask & 0b1111111111111111);
+    
+    // Phân tích hình học Cánh Én:
+    // Cánh trái (mắt 0..3): 0b0000000000001111
+    // Giữa thẳng (mắt 4..11): 0b0000111111110000
+    // Cánh phải (mắt 12..15): 0b1111000000000000
+    uint8_t leftWingCount  = __builtin_popcount(mask & 0b0000000000001111);
+    uint8_t centerCount    = __builtin_popcount(mask & 0b0000111111110000);
+    uint8_t rightWingCount = __builtin_popcount(mask & 0b1111000000000000);
+    uint8_t totalBlack     = leftWingCount + centerCount + rightWingCount;
 
-    // 1. VẠCH NGANG / NGÃ TƯ / VẠCH ĐÍCH (Từ 11 mắt đen trở lên cùng lúc)
-    if (totalBlack >= 11) {
+    // 1. VẠCH NGANG / NGÃ TƯ / CHỮ T (Phù hợp 100% với bo mạch Cánh Én):
+    // Khi lướt qua vạch ngang: hoặc cụm 8 mắt giữa đen đậm (>=5),
+    // hoặc cả 2 cánh ngoài cùng đen (leftWing >= 2 && rightWing >= 2), hoặc tổng số mắt đen >= 8
+    if (centerCount >= 5 || (leftWingCount >= 2 && rightWingCount >= 2) || totalBlack >= 8) {
         return LINE_CASE_CROSS_LINE;
     }
 
@@ -156,7 +173,7 @@ LineCase_t pid_detect_case(float position, uint8_t blackCount) {
         unsigned long lostElapsed = millis() - lostLineStartTime;
 
         // Nếu trước đó đang bám thẳng ở giữa tâm trong thời gian ngắn (<= 60ms) -> Nét đứt
-        if (lastKnownDirection == 0 && fabsf(lastKnownPosition) < 15.0f && lostElapsed <= DASHED_LINE_TIMEOUT_MS) {
+        if (lastKnownDirection == 0 && fabsf(lastKnownPosition) < 20.0f && lostElapsed <= DASHED_LINE_TIMEOUT_MS) {
             return LINE_CASE_DASHED_LINE;
         }
 
@@ -167,9 +184,8 @@ LineCase_t pid_detect_case(float position, uint8_t blackCount) {
     // Đã nhìn thấy vạch đen -> Reset cờ mất line
     isLineCurrentlyLost = false;
 
-    // 3. TOÀN BỘ CÁC TRƯỜNG HỢP CÒN LẠI (Đường thẳng, cua nhẹ, cua vừa, cua gắt, cua chữ S, cua 90 độ):
-    // -> ĐỀU ĐƯỢC ĐIỀU KHIỂN BẰNG THUẬT TOÁN PID DÒNG CHẢY LIÊN TỤC (CONTINUOUS FLOW SMOOTH PID)
-    // -> BÁNH XE LUÔN LĂN TIẾN MƯỢT MÀ, KHÔNG BAO GIỜ DỪNG KHỰNG HAY XOAY XOAY TẠI CHỖ!
+    // 3. TOÀN BỘ CÁC TRƯỜNG HỢP CÒN LẠI (Đường thẳng, cua nhẹ, cua chữ S, cua 90 độ):
+    // -> ĐỀU ĐƯỢC ĐIỀU KHIỂN BẰNG THUẬT TOÁN PID DÒNG CHẢY LIÊN TỤC VỚI HỆ THỐNG TRỌNG SỐ CÁNH ÉN!
     return LINE_CASE_NORMAL_PID;
 }
 
@@ -196,25 +212,25 @@ void pid_line_follow_step(void) {
     switch (currentCase) {
 
         // ---------------------------------------------------------------------
-        // CASE 1: BÁM LINE CHUẨN PID DÒNG CHẢY LIÊN TỤC (MỀM MẠI, ÊM RU, LƯỚT NHANH)
+        // CASE 1: BÁM LINE CHUẨN PID DÒNG CHẢY HÌNH HỌC CÁNH ÉN
         // ---------------------------------------------------------------------
         case LINE_CASE_NORMAL_PID: {
-            float error = position; // Sai số liên tục (-75.0 đến +75.0)
+            float error = position; // Sai số liên tục (-128.0 đến +128.0)
             float absErr = fabsf(error);
 
-            // 1. Khâu P mềm mại, mượt mà (Smooth Proportional):
-            // Giữ lái cực êm ở dải tâm và tăng lực lái vừa phải ở góc cua sâu
+            // 1. Khâu P thích ứng hình học Cánh Én (Adaptive Progressive P):
+            // - Dải 8 mắt giữa (|error| <= 35.0): Lái cực êm, xe chạy thẳng phẳng lì không lắc đầu.
+            // - Khi tràn sang 4 mắt cánh én (|error| > 35.0): Tự động mớm thêm lực cua dứt khoát bo góc 90°.
             float pTerm = pidConfig.Kp * error;
-            if (absErr > 20.0f) {
-                float extra = (absErr - 20.0f) * 0.40f;
+            if (absErr > 35.0f) {
+                float extra = (absErr - 35.0f) * 0.45f;
                 pTerm += (error > 0.0f) ? extra : -extra;
             }
 
-            // 2. Khâu vi phân D giảm chấn thủy lực (Low-Pass Filter):
-            // Dập tắt hoàn toàn rung lắc và hiện tượng lắc đuôi cá, thân xe êm ru
+            // 2. Khâu vi phân D lọc thông thấp 70% / 30% dập tắt hoàn toàn rung lắc đòn bẩy 9cm:
             float rawDelta = error - lastError;
             lastError = error;
-            smoothedDTerm = smoothedDTerm * 0.65f + (pidConfig.Kd * rawDelta) * 0.35f;
+            smoothedDTerm = smoothedDTerm * 0.70f + (pidConfig.Kd * rawDelta) * 0.30f;
             float dTerm = smoothedDTerm;
 
             // 3. Khâu tích phân I (Anti-windup: kẹp trong khoảng [-80, 80])
@@ -223,29 +239,37 @@ void pid_line_follow_step(void) {
             if (integralError < -80.0f) integralError = -80.0f;
             float iTerm = pidConfig.Ki * integralError;
 
-            // Tổng bù lái
+            // Tổng bù lái vi sai
             lastCorrection = pTerm + iTerm + dTerm;
 
-            // 4. Giảm ga ôm cua nhẹ nhàng (Tối đa chỉ giảm 20 PWM để duy trì trớn lướt, KHÔNG BỊ CHẬM):
-            float dragFactor = absErr / 75.0f;
+            // 4. Giảm ga ôm cua thích ứng cánh én (Tối đa giảm 25 PWM ở góc cua cực đại 128.0 để ghìm trớn):
+            float dragFactor = absErr / 128.0f;
             if (dragFactor > 1.0f) dragFactor = 1.0f;
-            int16_t currentBase = pidConfig.baseSpeed - (int16_t)(dragFactor * 20.0f);
+            int16_t currentBase = pidConfig.baseSpeed - (int16_t)(dragFactor * 25.0f);
 
             int16_t leftSpeed  = currentBase + (int16_t)lastCorrection;
             int16_t rightSpeed = currentBase - (int16_t)lastCorrection;
 
-            // 5. NGUYÊN TẮC VÀNG ĐỂ XE CHẠY ÊM RU, KHÔNG BAO GIỜ BỊ XOAY BÁNH TẠI CHỖ:
-            // Bánh trong luôn giữ tốc độ TIẾN tối thiểu (>= 20) làm điểm tựa lăn êm ái
-            // Cả hai bánh luôn quay tiến, xe uốn lượn mềm mại qua khúc cua với tốc độ cao!
-            leftSpeed  = clamp_val(leftSpeed, pidConfig.minSpeed, pidConfig.maxSpeed);
-            rightSpeed = clamp_val(rightSpeed, pidConfig.minSpeed, pidConfig.maxSpeed);
+            // 5. Thuật toán vi sai bám sàn cánh én:
+            // - Khi cua thường (|error| <= 70): Bánh trong luôn giữ minSpeed = 20, cả hai bánh cùng lăn tiến êm ru.
+            // - Khi cua vuông 90° gắt chạm cánh ngoài (|error| > 70): Bánh trong tự động thu hẹp về 5-10 PWM
+            //   để làm tâm xoay hẹp (pivot tightening), giúp đầu xe 9cm uốn trọn góc cua mà không văng sàn!
+            int16_t dynamicMin = pidConfig.minSpeed;
+            if (absErr > 70.0f) {
+                float wingTight = (absErr - 70.0f) / 58.0f;
+                if (wingTight > 1.0f) wingTight = 1.0f;
+                dynamicMin = (int16_t)(pidConfig.minSpeed - (wingTight * 15.0f)); // 20 -> 5
+            }
+
+            leftSpeed  = clamp_val(leftSpeed, dynamicMin, pidConfig.maxSpeed);
+            rightSpeed = clamp_val(rightSpeed, dynamicMin, pidConfig.maxSpeed);
 
             motor_set_speeds(leftSpeed, rightSpeed);
             break;
         }
 
         // ---------------------------------------------------------------------
-        // CASE 4: MẤT LINE (16 mắt đều trắng) -> Tìm lại line êm ái, KHÔNG xoay tít mù
+        // CASE 4: MẤT LINE (16 mắt đều trắng) -> Tìm lại line êm ái theo cánh én
         // ---------------------------------------------------------------------
         case LINE_CASE_LOST_LINE: {
             unsigned long lostElapsed = millis() - lostLineStartTime;
@@ -256,11 +280,11 @@ void pid_line_follow_step(void) {
                 break;
             }
 
-            // Xe lăn bánh êm ái hướng đầu xe về phía vạch cuối cùng vừa thấy
+            // Xe lăn bánh êm ái hướng đầu xe về phía cánh én vừa thấy vạch cuối cùng
             if (lastKnownDirection < 0) {
-                motor_set_speeds(20, 105); // Bánh trái lăn nhẹ, bánh phải đẩy xe về lại vạch
+                motor_set_speeds(15, 120); // Bánh trái lăn nhẹ, bánh phải đẩy xe về lại vạch
             } else if (lastKnownDirection > 0) {
-                motor_set_speeds(105, 20); // Bánh phải lăn nhẹ, bánh trái đẩy xe về lại vạch
+                motor_set_speeds(120, 15); // Bánh phải lăn nhẹ, bánh trái đẩy xe về lại vạch
             } else {
                 motor_set_speeds(70, 70);
             }
@@ -268,7 +292,7 @@ void pid_line_follow_step(void) {
         }
 
         // ---------------------------------------------------------------------
-        // CASE 5: VẠCH NGANG / NGÃ TƯ / VẠCH ĐÍCH
+        // CASE 5: VẠCH NGANG / NGÃ TƯ / CHỮ T
         // ---------------------------------------------------------------------
         case LINE_CASE_CROSS_LINE: {
             // Giữ hướng chạy thẳng lướt qua giao lộ với tốc độ cơ bản
@@ -302,11 +326,11 @@ LineCase_t pid_get_current_case(void) {
 
 const char* pid_get_case_name(LineCase_t c) {
     switch (c) {
-        case LINE_CASE_NORMAL_PID: return "CASE 1: Bam Line PID";
+        case LINE_CASE_NORMAL_PID: return "CASE 1: Bam Line Canh En";
         case LINE_CASE_SHARP_LEFT: return "CASE 2: Cua Gat Trai (90 deg)";
         case LINE_CASE_SHARP_RIGHT: return "CASE 3: Cua Gat Phai (90 deg)";
         case LINE_CASE_LOST_LINE: return "CASE 4: Mat Line (Tim Lai)";
-        case LINE_CASE_CROSS_LINE: return "CASE 5: Vach Ngang / Nga Tu";
+        case LINE_CASE_CROSS_LINE: return "CASE 5: Vach Ngang / Chu T";
         case LINE_CASE_T_LEFT: return "CASE 6: Nga 3 Trai";
         case LINE_CASE_T_RIGHT: return "CASE 7: Nga 3 Phai";
         case LINE_CASE_STOPPED: return "CASE 8: Dung Xe";
